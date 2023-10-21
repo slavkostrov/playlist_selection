@@ -62,6 +62,10 @@ Coverage report:
 poetry run pytest --cov=src --cov-fail-under=60 tests/
 ```
 
+#### Jupyter
+
+__TODO__
+
 ## Authors
 
 __TODO__

@@ -2,6 +2,15 @@
 
 ## Developement
 
+* Poetry
+
+Install poetry:
+```bash
+curl -sSL https://install.python-poetry.org | python3 -
+```
+
+* Linters
+  
 Setup pre-commit hooks:
 
 ```bash

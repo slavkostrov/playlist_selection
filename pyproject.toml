@@ -29,6 +29,9 @@ extend-select = [
   "UP",  # pyupgrade
   "D",   # pydocstyle
 ]
+extend-exclude = [
+    "tests/*.py",
+]
 
 [tool.ruff.pydocstyle]
 convention = "google"

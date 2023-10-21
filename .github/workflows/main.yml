@@ -28,7 +28,7 @@ jobs:
       - name: Install the project dependencies
         run: poetry install --without test
       - name: Check with ruff
-        run: poetry run ruff --output-format=github --config ./pyproject.toml --extend-exclude tests/*.py
+        run: poetry run ruff --output-format=github --config ./pyproject.toml
   tests:
     runs-on: ubuntu-latest
     steps:

@@ -2,11 +2,9 @@
 requires-python = ">=3.10"
 
 [tool.ruff]
-extend-select = ["E501"]
 line-length = 120
-
-[tool.ruff]
 extend-select = [
+  "E501",
   "UP",  # pyupgrade
   "D",   # pydocstyle
 ]

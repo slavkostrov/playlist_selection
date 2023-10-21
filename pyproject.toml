@@ -5,7 +5,7 @@ requires-python = ">=3.10"
 name = "project"
 version = "0.1.0"
 description = ""
-authors = ["Vyacheslav Kostrov <slavkostrov@gmail.com>"]
+authors = ["Daniil Ganych <example@gmail.com>", "Nikita Saraev <example@gmail.com>", "Vyacheslav Kostrov <slavkostrov@gmail.com>"]
 readme = "README.md"
 packages = [{include = "src"}]
 

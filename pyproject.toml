@@ -32,6 +32,7 @@ extend-select = [
 extend-exclude = [
     "tests/*.py",
 ]
+force-exclude: true
 
 [tool.ruff.pydocstyle]
 convention = "google"

@@ -1,6 +1,6 @@
 # playlist_selection
 
-## Developement
+## Development
 
 Create new branch from `master` to add new feature. Create Pull Requests with new changes, add tests and check code quality.
 

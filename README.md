@@ -39,6 +39,13 @@ VSCode supports `ruff` [extension](https://marketplace.visualstudio.com/items?it
 
 #### Tests
 
+Without coverage report:
+
 ```bash
 poetry run pytest -vv tests
+```
+
+Coverage report:
+```bash
+poetry run pytest --cov=src --cov-fail-under=60 tests/
 ```

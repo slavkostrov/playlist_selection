@@ -5,6 +5,11 @@ on:
   pull_request:
     branches: [ master ]
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./
+
 jobs:
   linting:
     runs-on: ubuntu-latest
@@ -27,6 +32,8 @@ jobs:
           key: venv-${{ hashFiles('poetry.lock') }}
       - name: Install the project dependencies
         run: poetry install --without test
+      - name: pwd
+        run: pwd; ls
       - name: Check with ruff
         run: poetry run ruff --output-format=github --config ./pyproject.toml --exclude ./tests/*
   tests:

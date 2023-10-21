@@ -17,3 +17,5 @@ Fix code with `ruff`:
 ```bash
 ruff check --config pyproject.toml --fix .
 ```
+
+VSCode supports `ruff` [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff).

@@ -35,7 +35,7 @@ jobs:
       - name: pwd
         run: pwd; ls
       - name: Check with ruff
-        run: poetry run ruff --output-format=github --config ./pyproject.toml --exclude './tests/*'
+        run: poetry run ruff --output-format=github --config ./pyproject.toml --extend-exclude ./tests/*.py .
   tests:
     runs-on: ubuntu-latest
     steps:

@@ -13,21 +13,18 @@ jobs:
         uses: microsoft/action-python@0.7.0
         with:
           black: true
-          workdir: .
           python_version: 3.10
 
       - name: Pylint
         uses: microsoft/action-python@0.7.0
         with:
           pylint: true
-          workdir: .
           python_version: 3.10
           
       - name: Flake8
         uses: microsoft/action-python@0.7.0
         with:          
           flake8: true
-          workdir: .
           python_version: 3.10
 
   testing:

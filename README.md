@@ -9,6 +9,11 @@ Install poetry:
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
+Add dependency with:
+```bash
+poetry add flask
+```
+
 * Linters
   
 Setup pre-commit hooks:

@@ -4,7 +4,7 @@
 
 Create new branch from `master` to add new feature. Create Pull Requests with new changes, add tests and check code quality.
 
-* Poetry
+#### Poetry
 
 Install poetry:
 ```bash
@@ -16,7 +16,7 @@ Add dependency with:
 poetry add flask
 ```
 
-* Linters
+#### Linters
   
 Setup pre-commit hooks:
 
@@ -37,7 +37,7 @@ poetry ruff check --config pyproject.toml --fix .
 VSCode supports `ruff` [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff).
 
 
-* Tests
+#### Tests
 
 ```bash
 poetry run pytest -vv tests

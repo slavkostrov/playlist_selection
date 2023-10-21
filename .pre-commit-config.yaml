@@ -1,6 +1,7 @@
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.1.1
-  hooks:
-    - id: ruff
-      types_or: [python, pyi, jupyter]
-      args: [--fix, --exit-non-zero-on-fix]
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.1
+    hooks:
+      - id: ruff
+        types_or: [python, pyi, jupyter]
+        args: [--fix, --exit-non-zero-on-fix]

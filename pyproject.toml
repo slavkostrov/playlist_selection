@@ -30,6 +30,7 @@ extend-select = [
   "UP",  # pyupgrade
   "D",   # pydocstyle
 ]
+extend-include = ["*.ipynb"]
 extend-exclude = ["tests"]
 force-exclude = true
 

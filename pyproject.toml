@@ -11,6 +11,7 @@ packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+pydantic = "^2.4.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.2"
@@ -31,7 +32,7 @@ extend-select = [
   "D",   # pydocstyle
 ]
 extend-include = ["*.ipynb"]
-extend-exclude = ["tests"]
+extend-exclude = ["tests", "notebooks/api_description.ipynb"]
 force-exclude = true
 
 [tool.ruff.pydocstyle]

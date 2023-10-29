@@ -1,0 +1,20 @@
+---
+version: 1
+formatters:
+  simple:
+    class: logging.Formatter
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s'
+handlers:
+  stream_handler:
+    class: logging.StreamHandler
+    formatter: simple
+    level: INFO
+    stream: ext://sys.stdout
+loggers:
+  parser_logger:
+    handlers:
+    - stream_handler
+    level: INFO
+    propagate: false
+...

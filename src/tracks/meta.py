@@ -70,7 +70,7 @@ class TrackMeta(BaseModel):
     artist_id: list[str] = Field(default_factory=list, repr=False)
     track_id: str = Field(default="unknown", repr=False)
     track_name: str = Field(default="unknown", repr=True)
-    # TODO: Подумать как будем собирать жанры, в Spotify есть только для альбомов и вообще не для всех
+    # TODO: Подумать как будем собирать жанры, в Spotify есть только для альбомов и очень не для всех
     genres: list[str] = Field(default_factory=list, repr=True)
     track_details: TrackDetails = Field(default_factory=TrackDetails, repr=False)
 

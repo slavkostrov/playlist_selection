@@ -1,7 +1,9 @@
 """Module with parsers."""
 import functools
 import logging
+import logging.config
 import typing as tp
+import yaml
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -14,7 +16,9 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from ..tracks.meta import TrackMeta, TrackDetails
 
 
-LOGGER = logging.getLogger(__name__) # TODO: Дописать конфиг логгера
+LOGGER = logging.getLogger("parser_logger")
+with open("src/parsing/logging_config.yml") as fin:
+    logging.config.dictConfig(yaml.safe_load(fin))
 
 
 SPOTIFY_TOKEN_REFRESH_TIME_MINUTES = 55 # In minutes
@@ -92,28 +96,28 @@ class SpotifyParser(BaseParser):
             confidence_keys = list(filter(lambda x: x.endswith("_confidence"), response_keys))
             extra_params = {}
             for key in confidence_keys:
-              value_column = key.replace("_confidence", "")
-              filtered_values = list(filter(lambda x: x[key] >= confidence_threshold, filtered_intervals))
-              mean_value = np.mean(list(map(lambda x: x[value_column], filtered_values)))
-              extra_params[f"{interval_name}_mean_{value_column}"] = mean_value
+                value_column = key.replace("_confidence", "")
+                filtered_values = list(filter(lambda x: x[key] >= confidence_threshold, filtered_intervals))
+                mean_value = np.mean(list(map(lambda x: x[value_column], filtered_values)))
+                extra_params[f"{interval_name}_mean_{value_column}"] = mean_value
             
             # Specific format for segments
             if interval_name == "segments":
-              mean_pitch = np.mean(list(map(lambda x: np.mean(x["pitches"]), filtered_intervals)))
-              max_pitch = np.mean(list(map(lambda x: np.max(x["pitches"]), filtered_intervals)))
-              min_pitch = np.mean(list(map(lambda x: np.min(x["pitches"]), filtered_intervals)))
+                mean_pitch = np.mean(list(map(lambda x: np.mean(x["pitches"]), filtered_intervals)))
+                max_pitch = np.mean(list(map(lambda x: np.max(x["pitches"]), filtered_intervals)))
+                min_pitch = np.mean(list(map(lambda x: np.min(x["pitches"]), filtered_intervals)))
 
-              mean_timbre = np.mean(list(map(lambda x: np.mean(x["timbre"]), filtered_intervals)))
-              max_timbre = np.mean(list(map(lambda x: np.max(x["timbre"]), filtered_intervals)))
-              min_timbre = np.mean(list(map(lambda x: np.min(x["timbre"]), filtered_intervals)))
+                mean_timbre = np.mean(list(map(lambda x: np.mean(x["timbre"]), filtered_intervals)))
+                max_timbre = np.mean(list(map(lambda x: np.max(x["timbre"]), filtered_intervals)))
+                min_timbre = np.mean(list(map(lambda x: np.min(x["timbre"]), filtered_intervals)))
 
-              extra_params["segments_mean_pitch"] = mean_pitch
-              extra_params["segments_max_pitch"] = max_pitch
-              extra_params["segments_min_pitch"] = min_pitch
+                extra_params["segments_mean_pitch"] = mean_pitch
+                extra_params["segments_max_pitch"] = max_pitch
+                extra_params["segments_min_pitch"] = min_pitch
 
-              extra_params["segments_mean_timbre"] = mean_timbre
-              extra_params["segments_max_timbre"] = max_timbre
-              extra_params["segments_min_timbre"] = min_timbre
+                extra_params["segments_mean_timbre"] = mean_timbre
+                extra_params["segments_max_timbre"] = max_timbre
+                extra_params["segments_min_timbre"] = min_timbre
 
             res = {
                 f"{interval_name}_number": n_items,
@@ -125,7 +129,7 @@ class SpotifyParser(BaseParser):
         res = {}
         for key in analysis_reponse:
             if key in ["meta", "track"]:
-              continue
+                continue
             temp_res = get_single_feature_params(
                 analysis_reponse[key],
                 interval_name=key,
@@ -182,6 +186,7 @@ class SpotifyParser(BaseParser):
         search_type = "track"
         limit = 1 if song_name else ARTIST_TOP_TRACKS
 
+        LOGGER.info("collecting meta for %s" % q)
         items = self.sp.search(q=q, type=search_type, limit=limit)["tracks"]["items"]
 
         if not items:
@@ -286,6 +291,7 @@ class SpotifyParser(BaseParser):
 
             filename = f"tracks/{track.artist_name}-{track.track_name}.json" # Подумать над тем как будем сохранять
             obj_body = track.json()
+            LOGGER.info("saving %s" % filename)
             s3_client.put_object(Bucket=bucket_name, Key=filename, Body=obj_body)
 
         return f"{schema}://{host}/{bucket_name}"

@@ -1,3 +1,4 @@
 """Audio downloading package."""
+from .downloader import YouTubeDownloader
 
-__all__ = []
+__all__ = ["YouTubeDownloader"]

@@ -1,6 +1,7 @@
 """Track meta info dataclass."""
 import json
 import re
+from typing import Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -95,8 +96,8 @@ class TrackMeta(BaseModel):
         obj = cls(**params)
         return obj
     
-    @property
-    def s3_save_filename(self):
+    def get_s3_save_filename(self, prefix: str | None = None):
         """S3 save directory."""
-        genre_name = self.genres[0]
-        return f"{S3_SAVE_PREFIX}/{genre_name}/{self.artist_name[0]}-{self.track_name}"
+        prefix = prefix or S3_SAVE_PREFIX
+        folder_name = (self.track_name + self.artist_name[0]).replace(" ", "_")
+        return f"{prefix}/{folder_name}/meta"

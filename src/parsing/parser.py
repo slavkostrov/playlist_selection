@@ -16,6 +16,7 @@ from spotipy.oauth2 import SpotifyClientCredentials
 from ..tracks.meta import TrackMeta, TrackDetails
 
 from pathlib import Path
+from spotipy.exceptions import SpotifyException
 
 LOGGER = logging.getLogger("parser_logger")
 with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
@@ -181,35 +182,46 @@ class SpotifyParser(BaseParser):
         artist_name: str | None = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta] | None:
-        self.refresh_token()
-
-        song_name = song_name or ""
-        artist_name = artist_name or ""
-
-        # Create search query
-        q = f'track:"{song_name}" artist:"{artist_name}"'
-        search_type = "track"
-        limit = 1 if song_name else ARTIST_TOP_TRACKS
-
-        LOGGER.info("collecting meta for %s" % q)
-        items = self.sp.search(q=q, type=search_type, limit=limit)["tracks"]["items"]
-
-        if not items:
-            if raise_not_found:
-                raise ValueError("no song found for query: %s" % q)
-            LOGGER.info("no song found for %s" % q)
-            return
         
-        # Get audio features
-        track_ids = list(map(lambda x: x.get("id"), items))
-        audio_features = self.sp.audio_features(tracks=track_ids)
+        while True:
+            
+            try:
+                self.refresh_token()
 
-        tracks_meta = []
-        for track_feats, audio_feats in zip(items, audio_features):
-            # Merge all info into specific format
-            track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
-            track_meta["track_details"] = TrackDetails(**track_details)
-            tracks_meta.append(TrackMeta(**track_meta))
+                song_name = song_name or ""
+                artist_name = artist_name or ""
+
+                # Create search query
+                q = f'track:"{song_name}" artist:"{artist_name}"'
+                search_type = "track"
+                limit = 1 if song_name else ARTIST_TOP_TRACKS
+
+                LOGGER.info("collecting meta for %s" % q)
+                items = self.sp.search(q=q, type=search_type, limit=limit)["tracks"]["items"]
+
+                if not items:
+                    if raise_not_found:
+                        raise ValueError("no song found for query: %s" % q)
+                    LOGGER.info("no song found for %s" % q)
+                    return
+                
+                # Get audio features
+                track_ids = list(map(lambda x: x.get("id"), items))
+                audio_features = self.sp.audio_features(tracks=track_ids)
+
+                tracks_meta = []
+                for track_feats, audio_feats in zip(items, audio_features):
+                    # Merge all info into specific format
+                    track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
+                    track_meta["track_details"] = TrackDetails(**track_details)
+                    tracks_meta.append(TrackMeta(**track_meta))
+            except SpotifyException as e:
+                import time
+                time.sleep(60 * np.random.uniform(1, 4))
+                print(f"got exception {e}")
+                continue
+            else:
+                break
 
         return tracks_meta
 
@@ -261,6 +273,7 @@ class SpotifyParser(BaseParser):
         host: str,
         bucket_name: str,
         tracks_meta: list[TrackMeta],
+        prefix: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
         raise_wrong_type=False,
@@ -294,7 +307,7 @@ class SpotifyParser(BaseParser):
                 LOGGER.info("expected type TrackMeta, got: %s" % track)
                 continue
 
-            filename = f"{track.s3_save_filename}.json"
+            filename = f"{track.get_s3_save_filename(prefix=prefix)}.json"
             obj_body = track.json()
             LOGGER.info("saving %s" % filename)
             s3_client.put_object(Bucket=bucket_name, Key=filename, Body=obj_body)

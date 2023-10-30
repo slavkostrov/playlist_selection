@@ -1,4 +1,5 @@
 """Module with downloaders implementation."""
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import yaml
 import boto3
@@ -11,6 +12,8 @@ from abc import ABC, abstractmethod
 
 from pytube import YouTube
 from pytube import Search
+
+DOWNLOADER_N_JOBS = 8
 
 LOGGER = logging.getLogger("downloader_logger")
 with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
@@ -42,7 +45,7 @@ class YouTubeDownloader(BaseDownloader):
 
     def search_track_audio(self, song_list: list) -> YouTube:
         """Search and return video metadata for mp3 download."""
-        youtube_video = Search(f"{song_list[1]} by {song_list[0]}").results[0]
+        youtube_video = Search(f"{song_list[0]} by {song_list[1]}").results[0]
         yt_video_metadata = youtube_video.streams.filter(only_audio=True).first()
 
         return yt_video_metadata
@@ -50,27 +53,30 @@ class YouTubeDownloader(BaseDownloader):
 
     def download_single_audio(
         self, 
-        song_list: list, 
+        song: list, 
         temp_dir: str = None
     ) -> None:
         """Download single audio to local fs."""
         LOGGER.info("search for track audio")
-        self.yt_video_metadata = self.search_track_audio(song_list)
+        self.yt_video_metadata = self.search_track_audio(song)
         LOGGER.info("Download mp3 from YouTube")
-        self.yt_video_metadata.download(filename=f"{temp_dir}/{song_list[0]}-{song_list[1]}.mp3")
+        self.yt_video_metadata.download(filename=f"{temp_dir}/{song[0]}-{song[1]}.mp3")
 
 
     def save_to_s3(
         self,
-        song_list: list,
+        song: list,
         schema: str,
         host: str,
         bucket_name: str,
+        prefix: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
         temp_dir: str = None,
     ) -> str:
         """Save audio file to s3."""
+        folder_name = (song[0] + song[1]).replace(" ", "_")
+        print(f"{prefix}/{folder_name}/audio.mp3")
         aws_access_key_id = aws_access_key_id or self._aws_access_key_id
         aws_secret_access_key = aws_secret_access_key or self._aws_secret_access_key
 
@@ -81,9 +87,10 @@ class YouTubeDownloader(BaseDownloader):
             aws_secret_access_key=aws_secret_access_key,
             endpoint_url=f"{schema}://{host}",
         )
-        filename_path = f"tracks/{song_list[0]}-{song_list[1]}.mp3"
-        obj_body = f"{temp_dir}/{song_list[0]}-{song_list[1]}.mp3"
-        LOGGER.info("s3 uploading")
+        folder_name = (song[0] + song[1]).replace(" ", "_")
+        filename_path = f"{prefix}/{folder_name}/audio.mp3"
+        obj_body = f"{temp_dir}/{song[0]}-{song[1]}.mp3"
+        LOGGER.info("S3 uploading to %s.", filename_path)
         s3_client.upload_file(Filename=obj_body, Bucket=bucket_name, Key=filename_path)
 
         return f"{schema}://{host}/{bucket_name}"
@@ -94,15 +101,43 @@ class YouTubeDownloader(BaseDownloader):
         schema: str,
         host: str,
         bucket_name: str,
+        prefix: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None, 
     ) -> None:
         """Downloading mp3 audio to local temp and then to s3."""
         with make_temp_directory() as temp_dir:
-            LOGGER.info("downloading to temp")
-            self.download_single_audio(song_list, temp_dir)
-            LOGGER.info("downloading to s3")
-            self.save_to_s3(song_list, schema, host, bucket_name, aws_access_key_id, aws_secret_access_key, temp_dir)
+            
+            def func(song):
+                self.download_single_audio(song, temp_dir)
+                self.save_to_s3(
+                    song=song,
+                    schema=schema,
+                    host=host,
+                    bucket_name=bucket_name,
+                    aws_access_key_id=aws_access_key_id,
+                    aws_secret_access_key=aws_secret_access_key,
+                    temp_dir=temp_dir,
+                    prefix=prefix,
+                )
+            
+            with ThreadPoolExecutor(DOWNLOADER_N_JOBS) as executor:
+                list(executor.map(lambda args: func(args), song_list))
+    
+            # for song in song_list:
+            #     LOGGER.info("downloading to temp")
+            #     self.download_single_audio(song, temp_dir)
+            #     LOGGER.info("downloading to s3")
+            #     self.save_to_s3(
+            #         song=song,
+            #         schema=schema,
+            #         host=host,
+            #         bucket_name=bucket_name,
+            #         aws_access_key_id=aws_access_key_id,
+            #         aws_secret_access_key=aws_secret_access_key,
+            #         temp_dir=temp_dir,
+            #         prefix=prefix,
+            #     )
 
     # TODO: PARALLELISM
     # def download_audios(

@@ -1010,7 +1010,6 @@ files = [
 six = ">=1.5"
 
 [[package]]
-<<<<<<< HEAD
 name = "pytube"
 version = "15.0.0"
 description = "Python 3 library for downloading YouTube Videos."
@@ -1019,7 +1018,6 @@ python-versions = ">=3.7"
 files = [
     {file = "pytube-15.0.0-py3-none-any.whl", hash = "sha256:07b9904749e213485780d7eb606e5e5b8e4341aa4dccf699160876da00e12d78"},
     {file = "pytube-15.0.0.tar.gz", hash = "sha256:076052efe76f390dfa24b1194ff821d4e86c17d41cb5562f3a276a8bcbfc9d1d"},
-=======
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
@@ -1040,7 +1038,6 @@ files = [
     {file = "pywin32-306-cp38-cp38-win_amd64.whl", hash = "sha256:e8ac1ae3601bee6ca9f7cb4b5363bf1c0badb935ef243c4733ff9a393b1690c0"},
     {file = "pywin32-306-cp39-cp39-win32.whl", hash = "sha256:e25fd5b485b55ac9c057f67d94bc203f3f6595078d1fb3b458c9c28b7153a802"},
     {file = "pywin32-306-cp39-cp39-win_amd64.whl", hash = "sha256:39b61c15272833b5c329a2989999dcae836b1eed650252ab1b7bfbe1d59f30f4"},
->>>>>>> master
 ]
 
 [[package]]
@@ -1429,8 +1426,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.13"
-<<<<<<< HEAD
 content-hash = "c4d75ffa303ee01b98eaee4523c1518f9aaf68782e2db9077a89f350116e606b"
-=======
-content-hash = "ee79bc4ba52cf9bcde62dc0b524efdc5248612378aae57e86d891170cba8be6c"
->>>>>>> master

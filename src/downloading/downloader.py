@@ -51,7 +51,7 @@ class YouTubeDownloader(BaseDownloader):
         self, 
         song_list: list, 
         temp_dir: str = None
-        ) -> None:
+    ) -> None:
         """Download single audio to local fs."""
         LOGGER.info("search for track audio")
         self.yt_video_metadata = self.search_track_audio(song_list)
@@ -95,7 +95,7 @@ class YouTubeDownloader(BaseDownloader):
         bucket_name: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None, 
-        ) -> None:
+    ) -> None:
         """Downloading mp3 audio to local temp and then to s3."""
         with make_temp_directory() as temp_dir:
             LOGGER.info("downloading to temp")

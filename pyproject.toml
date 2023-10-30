@@ -38,7 +38,7 @@ extend-select = [
   "D",   # pydocstyle
 ]
 extend-include = ["*.ipynb"]
-extend-exclude = ["tests", "notebooks/api_description.ipynb", "downloader_example.ipynb"]
+extend-exclude = ["tests", "notebooks/api_description.ipynb", "notebooks/downloader_example.ipynb"]
 force-exclude = true
 
 [tool.ruff.pydocstyle]

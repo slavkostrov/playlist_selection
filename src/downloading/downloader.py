@@ -1,4 +1,5 @@
 """Module with downloaders implementation."""
+from pathlib import Path
 import yaml
 import boto3
 import tempfile
@@ -12,7 +13,7 @@ from pytube import YouTube
 from pytube import Search
 
 LOGGER = logging.getLogger("downloader_logger")
-with open("logger_config/logging_config.yml") as fin:
+with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
     logging.config.dictConfig(yaml.safe_load(fin))
 
 class BaseDownloader(ABC):

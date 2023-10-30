@@ -13,11 +13,11 @@ import numpy as np
 import spotipy as sp
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from ..tracks.meta import TrackMeta, TrackDetails
+from tracks.meta import TrackMeta, TrackDetails
 
 
 LOGGER = logging.getLogger("parser_logger")
-with open("src/parsing/logging_config.yml") as fin:
+with open("parsing/logging_config.yml") as fin:
     logging.config.dictConfig(yaml.safe_load(fin))
 
 
@@ -143,8 +143,8 @@ class SpotifyParser(BaseParser):
             "album_name": track_features["album"]["name"] if "album" in track_features else None,
             "album_id": track_features["album"]["id"] if "album" in track_features else None,
             "album_release_date": track_features["album"]["release_date"] if "album" in track_features else None,
-            "artist_name": list(map(lambda x: x.get("name", ), track_features["artists"])),
-            "artist_id": list(map(lambda x: x.get("id", ), track_features["artists"])),
+            "artist_name": list(map(lambda x: x.get("name"), track_features["artists"])),
+            "artist_id": list(map(lambda x: x.get("id"), track_features["artists"])),
             "track_id": track_features["id"],
             "track_name": track_features["name"],
         }
@@ -168,6 +168,10 @@ class SpotifyParser(BaseParser):
         }
         audio_analysis = self.sp.audio_analysis(track_id=track_meta["track_id"])
         track_details.update(**self._get_audio_analysis_info(audio_analysis))
+
+        artist_info = self.sp.artist(track_meta["artist_id"][0])
+        track_meta.update({"genres": artist_info["genres"]})
+
         return track_meta, track_details
 
     def _parse_single_song(
@@ -289,7 +293,7 @@ class SpotifyParser(BaseParser):
                 LOGGER.info("expected type TrackMeta, got: %s" % track)
                 continue
 
-            filename = f"tracks/{track.artist_name}-{track.track_name}.json" # Подумать над тем как будем сохранять
+            filename = f"{track.s3_save_filename}.json"
             obj_body = track.json()
             LOGGER.info("saving %s" % filename)
             s3_client.put_object(Bucket=bucket_name, Key=filename, Body=obj_body)

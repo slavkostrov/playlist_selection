@@ -4,6 +4,9 @@ import json
 from pydantic import BaseModel, Field
 
 
+S3_SAVE_PREFIX = "tracks" # Директория на s3 куда сохраняем мету
+
+
 class TrackDetails(BaseModel):
     """Track details info."""
     # Basic info
@@ -71,7 +74,7 @@ class TrackMeta(BaseModel):
     track_id: str = Field(default="unknown", repr=False)
     track_name: str = Field(default="unknown", repr=True)
     # TODO: Подумать как будем собирать жанры, в Spotify есть только для альбомов и очень не для всех
-    genres: list[str] = Field(default_factory=list, repr=True)
+    genres: list[str] = Field(default_factory=lambda : ["unknown"], repr=True)
     track_details: TrackDetails = Field(default_factory=TrackDetails, repr=False)
 
     @classmethod
@@ -81,3 +84,9 @@ class TrackMeta(BaseModel):
             params = json.load(fin)
         obj = cls(**params)
         return obj
+    
+    @property
+    def s3_save_filename(self):
+        """S3 save directory."""
+        genre_name = self.genres[0]
+        return f"{S3_SAVE_PREFIX}/{genre_name}/{self.artist_name[0]}-{self.track_name}"

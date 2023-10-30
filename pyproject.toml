@@ -18,6 +18,8 @@ boto3 = "^1.28.73"
 pyyaml = "^6.0.1"
 pandas = "^2.1.2"
 tqdm = "^4.66.1"
+pytube = "^15.0.0"
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.2"
@@ -39,7 +41,7 @@ extend-select = [
   "D",   # pydocstyle
 ]
 extend-include = ["*.ipynb"]
-extend-exclude = ["tests", "notebooks/api_description.ipynb"]
+extend-exclude = ["tests", "notebooks/api_description.ipynb", "notebooks/downloader_example.ipynb"]
 force-exclude = true
 
 [tool.ruff.pydocstyle]

@@ -1,7 +1,8 @@
 """Track meta info dataclass."""
 import json
+import re
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 S3_SAVE_PREFIX = "tracks" # Директория на s3 куда сохраняем мету
@@ -76,6 +77,15 @@ class TrackMeta(BaseModel):
     # TODO: Подумать как будем собирать жанры, в Spotify есть только для альбомов и очень не для всех
     genres: list[str] = Field(default_factory=lambda : ["unknown"], repr=True)
     track_details: TrackDetails = Field(default_factory=TrackDetails, repr=False)
+    
+    @validator("album_release_date", pre=True)
+    def _validate_date(cls, value):
+        if re.match(r'\d{4}-\d{2}-\d{2}', value):
+            return value
+        elif re.match(r'\d{4}', value):
+            return f"{value}-01-01"
+        else:
+            raise RuntimeError("Validation error.") # TODO: fix
 
     @classmethod
     def load_from_json(cls, filename: str):

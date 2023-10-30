@@ -17,7 +17,7 @@ from ..tracks.meta import TrackMeta, TrackDetails
 
 
 LOGGER = logging.getLogger("parser_logger")
-with open("src/parsing/logging_config.yml") as fin:
+with open("src/logging_config/logging_config.yml") as fin:
     logging.config.dictConfig(yaml.safe_load(fin))
 
 

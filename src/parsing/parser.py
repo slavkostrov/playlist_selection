@@ -13,11 +13,12 @@ import numpy as np
 import spotipy as sp
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from tracks.meta import TrackMeta, TrackDetails
+from ..tracks.meta import TrackMeta, TrackDetails
 
+from pathlib import Path
 
 LOGGER = logging.getLogger("parser_logger")
-with open("parsing/logging_config.yml") as fin:
+with open(Path(__file__).parent / "logging_config.yml") as fin:
     logging.config.dictConfig(yaml.safe_load(fin))
 
 

@@ -86,7 +86,7 @@ class TrackMeta(BaseModel):
         return obj
     
     @property
-    def s3_save_prefix(self):
+    def s3_save_filename(self):
         """S3 save directory."""
         genre_name = self.genres[0]
         return f"{S3_SAVE_PREFIX}/{genre_name}/{self.artist_name[0]}-{self.track_name}"

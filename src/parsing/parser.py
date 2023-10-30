@@ -293,7 +293,7 @@ class SpotifyParser(BaseParser):
                 LOGGER.info("expected type TrackMeta, got: %s" % track)
                 continue
 
-            filename = f"{track.s3_save_prefix}.json"
+            filename = f"{track.s3_save_filename}.json"
             obj_body = track.json()
             LOGGER.info("saving %s" % filename)
             s3_client.put_object(Bucket=bucket_name, Key=filename, Body=obj_body)

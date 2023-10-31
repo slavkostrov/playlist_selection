@@ -2,7 +2,39 @@
 
 ## Description
 
-__TODO__
+Generating playlists based on selected tracks/Spotify profile/Ya.Muzik/Apple Music.
+1. Entrance:
+- Account details
+- List of tracks for generating a similar playlist (all tracks/ready playlist/separate list of tracks)
+- Additionally: characteristics of the generated playlist (mood, etc.)
+
+2. Output:
+- Link to a playlist with the most similar tracks
+
+## Plan
+
+Work plan
+
+What tasks will be done at the first stage (exploratory data analysis and primary data analytics)
+* Think about how we will collect data and where?
+* How much data do you need? (not too much in the first step)
+* Think about where we will store everything
+* Think about resources in general
+
+  
+What tasks will be done in the second stage (ML)
+* Think about audio presentation
+* You can try ready-made ones on mvp
+* Encodec
+* See what else is there
+* Vector search
+* See what libraries faiss, qdrant are available
+  
+What tasks will be done in the third stage (DL)
+* We can try to train our own (we can use any meta audio), metric learning, triplet loss
+* Think over the architecture (you can look for a ready-made one)
+* yandex ml cup 2022 find a problem, see what solutions were there (task of finding identical authors)
+What tasks would you like to do, but perhaps you won’t have time to do (link them to the necessary stages)
 
 ## Examples
 
@@ -68,4 +100,6 @@ __TODO__
 
 ## Authors
 
-__TODO__
+* Saraev Nikita
+* Ganych Daniil
+* Kostrov Vyacheslav

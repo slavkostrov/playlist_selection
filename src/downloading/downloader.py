@@ -6,7 +6,11 @@ import shutil
 import contextlib
 import typing as tp
 import logging
+import logging.config
 from abc import ABC, abstractmethod
+from functools import partial
+
+from concurrent.futures import ThreadPoolExecutor
 
 from pytube import YouTube
 from pytube import Search
@@ -14,6 +18,7 @@ from pytube import Search
 LOGGER = logging.getLogger("downloader_logger")
 with open("logger_config/logging_config.yml") as fin:
     logging.config.dictConfig(yaml.safe_load(fin))
+
 
 class BaseDownloader(ABC):
     """Base downloader class."""
@@ -27,6 +32,7 @@ class BaseDownloader(ABC):
         """Download audio and put it into specific filesystem."""
         raise NotImplementedError()
 
+
 @contextlib.contextmanager
 def make_temp_directory():
     """Context manager for creating temp directories."""
@@ -35,6 +41,7 @@ def make_temp_directory():
         yield temp_dir
     finally:
         shutil.rmtree(temp_dir)
+
 
 class YouTubeDownloader(BaseDownloader):
     """YouTube mp3 downloader class."""
@@ -54,7 +61,7 @@ class YouTubeDownloader(BaseDownloader):
     ) -> None:
         """Download single audio to local fs."""
         LOGGER.info("search for track audio")
-        self.yt_video_metadata = self.search_track_audio(song_list)
+        self.yt_video_metadata = self.search_track_audio(song_list=song_list)
         LOGGER.info("Download mp3 from YouTube")
         self.yt_video_metadata.download(filename=f"{temp_dir}/{song_list[0]}-{song_list[1]}.mp3")
 
@@ -87,6 +94,7 @@ class YouTubeDownloader(BaseDownloader):
 
         return f"{schema}://{host}/{bucket_name}"
 
+
     def download_and_save_audio(
         self,
         song_list: list, 
@@ -99,43 +107,37 @@ class YouTubeDownloader(BaseDownloader):
         """Downloading mp3 audio to local temp and then to s3."""
         with make_temp_directory() as temp_dir:
             LOGGER.info("downloading to temp")
-            self.download_single_audio(song_list, temp_dir)
+            self.download_single_audio(song_list=song_list, temp_dir=temp_dir)
             LOGGER.info("downloading to s3")
-            self.save_to_s3(song_list, schema, host, bucket_name, aws_access_key_id, aws_secret_access_key, temp_dir)
+            self.save_to_s3(
+                song_list=song_list, 
+                schema=schema, 
+                host=host, 
+                bucket_name=bucket_name, 
+                aws_access_key_id=aws_access_key_id, 
+                aws_secret_access_key=aws_secret_access_key, 
+                temp_dir=temp_dir
+            )
 
-    # TODO: PARALLELISM
-    # def download_audios(
-        # self, 
-        # song_list: tp.List, 
-        # schema: str,
-        # host: str,
-        # bucket_name: str,
-        # aws_access_key_id: str | None = None,
-        # aws_secret_access_key: str | None = None,
-        # max_workers_num: int = 5,
-    # ) -> None:
-        # TRY 1: using process_map
-        # with self.make_temp_directory() as temp_dir:
-            # temp_dir.download_single_audio(song_info)
-            # temp_dir.save_to_s3(schema, host, bucket_name, aws_access_key_id, aws_secret_access_key)
-        # process_map(
-            # partial(self.download_and_save_audio, 
-            # schema,
-            # host,
-            # bucket_name,
-            # aws_access_key_id,
-            # aws_secret_access_key),
-            # song_list,
-            # max_workers=max_workers_num,
-        # )
-        # TRY 2: using ThreadPoolExecutor
-        # executor_fn = partial(
-            # self.download_and_save_audio,
-            # schema=schema,
-            # host=host,
-            # bucket_name=bucket_name,
-            # aws_access_key_id=aws_access_key_id,
-        # )
-        # LOGGER.info("start multiprocess audio downloading")
-        # with ThreadPoolExecutor(max_workers_num) as executor:
-            # executor.map(lambda args: executor_fn(*args), song_list)
+
+    def download_audios(
+        self, 
+        song_list: tp.List, 
+        schema: str,
+        host: str,
+        bucket_name: str,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
+        max_workers_num: int = 9,
+    ) -> None:
+        executor_fn = partial(
+            self.download_and_save_audio,
+            schema=schema,
+            host=host,
+            bucket_name=bucket_name,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+        )
+        LOGGER.info("start multiprocess audio downloading")
+        with ThreadPoolExecutor(max_workers_num) as executor:
+            list(executor.map(lambda x: executor_fn(x), song_list))

@@ -47,7 +47,12 @@ class YouTubeDownloader(BaseDownloader):
     """YouTube mp3 downloader class."""
 
     def search_track_audio(self, song_list: list) -> YouTube:
-        """Search and return video metadata for mp3 download."""
+        """Search and return video metadata for mp3 download.
+        
+        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
+
+        :return YouTube: class with YouTube song metadata
+        """
         youtube_video = Search(f"{song_list[1]} by {song_list[0]}").results[0]
         yt_video_metadata = youtube_video.streams.filter(only_audio=True).first()
 
@@ -56,10 +61,16 @@ class YouTubeDownloader(BaseDownloader):
 
     def download_single_audio(
         self, 
-        song_list: list, 
+        song_list: list | tuple, 
         temp_dir: str = None
     ) -> None:
-        """Download single audio to local fs."""
+        """Download single audio to local fs.
+
+        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
+        :param temp_dir: str | None: local directory for downloading
+
+        :return None
+        """
         LOGGER.info("search for track audio")
         self.yt_video_metadata = self.search_track_audio(song_list=song_list)
         LOGGER.info("Download mp3 from YouTube")
@@ -68,15 +79,26 @@ class YouTubeDownloader(BaseDownloader):
 
     def save_to_s3(
         self,
-        song_list: list,
+        song_list: list | tuple,
         schema: str,
         host: str,
         bucket_name: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
-        temp_dir: str = None,
+        temp_dir: str | None = None,
     ) -> str:
-        """Save audio file to s3."""
+        """Save audio file to s3.
+
+        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
+        :param schema str: s3 schema name
+        :param host str: s3 host name
+        :param bucket_name str: s3 bucket name
+        :param aws_access_key_id str | None: aws s3 access key id (statical)
+        :param aws_secret_access_key str | None: aws s3 secret key (statical)
+        :param temp_dir: str | None: local directory for downloading
+
+        :return str: s3 path to uploaded song
+        """
         aws_access_key_id = aws_access_key_id or self._aws_access_key_id
         aws_secret_access_key = aws_secret_access_key or self._aws_secret_access_key
 
@@ -97,14 +119,24 @@ class YouTubeDownloader(BaseDownloader):
 
     def download_and_save_audio(
         self,
-        song_list: list, 
+        song_list: tuple | list, 
         schema: str,
         host: str,
         bucket_name: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None, 
     ) -> None:
-        """Downloading mp3 audio to local temp and then to s3."""
+        """Downloading mp3 audio to local temp and then to s3.
+
+        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
+        :param schema str: s3 schema name
+        :param host str: s3 host name
+        :param bucket_name str: s3 bucket name
+        :param aws_access_key_id str | None: aws s3 access key id (statical)
+        :param aws_secret_access_key str | None: aws s3 secret key (statical)
+
+        :return None
+        """
         with make_temp_directory() as temp_dir:
             LOGGER.info("downloading to temp")
             self.download_single_audio(song_list=song_list, temp_dir=temp_dir)
@@ -122,7 +154,7 @@ class YouTubeDownloader(BaseDownloader):
 
     def download_audios(
         self, 
-        song_list: tp.List, 
+        song_list: list, 
         schema: str,
         host: str,
         bucket_name: str,
@@ -130,6 +162,18 @@ class YouTubeDownloader(BaseDownloader):
         aws_secret_access_key: str | None = None,
         max_workers_num: int = 9,
     ) -> None:
+        """Feature for downloading tracks by artist name and song title and then uploading to s3 immediately.
+
+        :param song_list tp.List: List of tuples, like (artist_name, song_name)
+        :param schema str: s3 schema name
+        :param host str: s3 host name
+        :param bucket_name str: s3 bucket name
+        :param aws_access_key_id str | None: aws s3 access key id (statical)
+        :param aws_secret_access_key str | None: aws s3 secret key (statical)
+        :param max_workers_num int: number of workers for ThreadPoolExecutor
+
+        :return None
+        """
         executor_fn = partial(
             self.download_and_save_audio,
             schema=schema,

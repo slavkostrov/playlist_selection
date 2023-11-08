@@ -5,7 +5,6 @@ import logging.config
 import typing as tp
 import yaml
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 import boto3
@@ -25,7 +24,7 @@ with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as 
 
 SPOTIFY_TOKEN_REFRESH_TIME_MINUTES = 55 # In minutes
 ARTIST_TOP_TRACKS = 5 # Number of tracks to collect by artist search
-PARSER_N_JOBS = 8 # Number of threads to create while parsing
+PARSER_N_JOBS = 1 # Number of threads to create while parsing
 
 
 class BaseParser(ABC):
@@ -182,7 +181,7 @@ class SpotifyParser(BaseParser):
         artist_name: str | None = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta] | None:
-        
+        # time.sleep(30 * np.random.uniform(1, 3))
         while True:
             
             try:
@@ -215,11 +214,10 @@ class SpotifyParser(BaseParser):
                     track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
                     track_meta["track_details"] = TrackDetails(**track_details)
                     tracks_meta.append(TrackMeta(**track_meta))
-            except SpotifyException as e:
-                import time
-                time.sleep(60 * np.random.uniform(1, 4))
-                print(f"got exception {e}")
-                continue
+            except SpotifyException:
+                # import time
+                # time.sleep(60 * np.random.uniform(1, 3))
+                raise
             else:
                 break
 
@@ -248,22 +246,11 @@ class SpotifyParser(BaseParser):
         
         tracks_meta = []
         # Both song name and artist
-        if song_list:
-            with ThreadPoolExecutor(PARSER_N_JOBS) as executor:
-                meta = list(executor.map(lambda args: executor_fn(*args), song_list))
-                tracks_meta.extend(meta)
-        
-        # Only song name
-        if song_name_list:
-            with ThreadPoolExecutor(PARSER_N_JOBS) as executor:
-                meta = list(executor.map(lambda arg: executor_fn(song_name=arg), song_name_list))
-                tracks_meta.extend(meta)
+        for song in song_list:
+            tracks_meta.append(executor_fn(*song))
 
-        # Only artist (returns top ARTIST_TOP_TRACKS tracks from search)
-        if artist_list:
-            with ThreadPoolExecutor(PARSER_N_JOBS) as executor:
-                meta = list(executor.map(lambda arg: executor_fn(artist_name=arg), artist_list))
-                tracks_meta.extend(meta)
+        if len(tracks_meta) == 0:
+            return list()
 
         return np.hstack(tracks_meta).tolist()
 

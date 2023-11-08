@@ -1,5 +1,4 @@
 """Module with downloaders implementation."""
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import yaml
 import boto3
@@ -90,7 +89,7 @@ class YouTubeDownloader(BaseDownloader):
         folder_name = (song[0] + song[1]).replace(" ", "_")
         filename_path = f"{prefix}/{folder_name}/audio.mp3"
         obj_body = f"{temp_dir}/{song[0]}-{song[1]}.mp3"
-        LOGGER.info("S3 uploading to %s.", filename_path)
+        print("S3 uploading to %s.", filename_path)
         s3_client.upload_file(Filename=obj_body, Bucket=bucket_name, Key=filename_path)
 
         return f"{schema}://{host}/{bucket_name}"
@@ -108,26 +107,8 @@ class YouTubeDownloader(BaseDownloader):
         """Downloading mp3 audio to local temp and then to s3."""
         with make_temp_directory() as temp_dir:
             
-            def func(song):
-                self.download_single_audio(song, temp_dir)
-                self.save_to_s3(
-                    song=song,
-                    schema=schema,
-                    host=host,
-                    bucket_name=bucket_name,
-                    aws_access_key_id=aws_access_key_id,
-                    aws_secret_access_key=aws_secret_access_key,
-                    temp_dir=temp_dir,
-                    prefix=prefix,
-                )
-            
-            with ThreadPoolExecutor(DOWNLOADER_N_JOBS) as executor:
-                list(executor.map(lambda args: func(args), song_list))
-    
-            # for song in song_list:
-            #     LOGGER.info("downloading to temp")
+            # def func(song):
             #     self.download_single_audio(song, temp_dir)
-            #     LOGGER.info("downloading to s3")
             #     self.save_to_s3(
             #         song=song,
             #         schema=schema,
@@ -138,6 +119,28 @@ class YouTubeDownloader(BaseDownloader):
             #         temp_dir=temp_dir,
             #         prefix=prefix,
             #     )
+            
+            # with ThreadPoolExecutor(DOWNLOADER_N_JOBS) as executor:
+            #     list(executor.map(lambda args: func(args), song_list))
+    
+            for song in song_list:
+                
+                try:
+                    LOGGER.info("downloading to temp")
+                    self.download_single_audio(song, temp_dir)
+                    LOGGER.info("downloading to s3")
+                    self.save_to_s3(
+                        song=song,
+                        schema=schema,
+                        host=host,
+                        bucket_name=bucket_name,
+                        aws_access_key_id=aws_access_key_id,
+                        aws_secret_access_key=aws_secret_access_key,
+                        temp_dir=temp_dir,
+                        prefix=prefix,
+                    )
+                except:
+                    continue
 
     # TODO: PARALLELISM
     # def download_audios(

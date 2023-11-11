@@ -175,6 +175,17 @@ class SpotifyParser(BaseParser):
 
         return track_meta, track_details
 
+    def _get_audio_features(self, base_meta):
+        track_ids = list(map(lambda x: x.get("id"), base_meta))
+        audio_features = self.sp.audio_features(tracks=track_ids)
+        tracks_meta = []
+        for track_feats, audio_feats in zip(base_meta, audio_features):
+            # Merge all info into specific format
+            track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
+            track_meta["track_details"] = TrackDetails(**track_details)
+            tracks_meta.append(TrackMeta(**track_meta))
+        return tracks_meta
+
     def _parse_single_song(
         self,
         song_name: str | None = None,
@@ -202,18 +213,8 @@ class SpotifyParser(BaseParser):
                     if raise_not_found:
                         raise ValueError("no song found for query: %s" % q)
                     LOGGER.info("no song found for %s" % q)
-                    return
-                
-                # Get audio features
-                track_ids = list(map(lambda x: x.get("id"), items))
-                audio_features = self.sp.audio_features(tracks=track_ids)
+                    return list()
 
-                tracks_meta = []
-                for track_feats, audio_feats in zip(items, audio_features):
-                    # Merge all info into specific format
-                    track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
-                    track_meta["track_details"] = TrackDetails(**track_details)
-                    tracks_meta.append(TrackMeta(**track_meta))
             except SpotifyException:
                 # import time
                 # time.sleep(60 * np.random.uniform(1, 3))
@@ -221,13 +222,11 @@ class SpotifyParser(BaseParser):
             else:
                 break
 
-        return tracks_meta
+        return items
 
     def parse(
         self, 
         song_list: list[tuple[str, str]] | None  = None,
-        song_name_list: list[str] | None  = None,
-        artist_list: list[str] | None  = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta]:
         """Parse tracks meta data.
@@ -244,15 +243,23 @@ class SpotifyParser(BaseParser):
             raise_not_found=raise_not_found,
         )
         
+        base_meta = []
         tracks_meta = []
         # Both song name and artist
         for song in song_list:
-            tracks_meta.append(executor_fn(*song))
+            base_meta.extend(executor_fn(*song))
+            if len(base_meta) >= 100:
+                tracks_meta.extend(self._get_audio_features(base_meta))
+                base_meta = base_meta[100:]
+
+        if base_meta:
+            tracks_meta.extend(self._get_audio_features(base_meta))
+        
 
         if len(tracks_meta) == 0:
             return list()
 
-        return np.hstack(tracks_meta).tolist()
+        return tracks_meta
 
     def load_to_s3(
         self,

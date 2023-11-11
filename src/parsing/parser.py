@@ -227,8 +227,6 @@ class SpotifyParser(BaseParser):
     def parse(
         self, 
         song_list: list[tuple[str, str]] | None  = None,
-        song_name_list: list[str] | None  = None,
-        artist_list: list[str] | None  = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta]:
         """Parse tracks meta data.
@@ -251,17 +249,17 @@ class SpotifyParser(BaseParser):
         for song in song_list:
             base_meta.extend(executor_fn(*song))
             if len(base_meta) >= 100:
-                tracks_meta.append(self._get_audio_features(base_meta))
+                tracks_meta.extend(self._get_audio_features(base_meta))
                 base_meta = base_meta[100:]
 
         if base_meta:
-            tracks_meta.append(self._get_audio_features(base_meta))
+            tracks_meta.extend(self._get_audio_features(base_meta))
         
 
         if len(tracks_meta) == 0:
             return list()
 
-        return np.hstack(tracks_meta).tolist()
+        return tracks_meta
 
     def load_to_s3(
         self,

@@ -181,7 +181,11 @@ class SpotifyParser(BaseParser):
         tracks_meta = []
         for track_feats, audio_feats in zip(base_meta, audio_features):
             # Merge all info into specific format
-            track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
+            try:
+                track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
+            except IndexError as e:
+                LOGGER.error(e, exc_info=e)
+                continue
             track_meta["track_details"] = TrackDetails(**track_details)
             tracks_meta.append(TrackMeta(**track_meta))
         return tracks_meta
@@ -202,18 +206,21 @@ class SpotifyParser(BaseParser):
                 artist_name = artist_name or ""
 
                 # Create search query
-                q = f'track:"{song_name}" artist:"{artist_name}"'
-                search_type = "track"
-                limit = 1 if song_name else ARTIST_TOP_TRACKS
+                if True: # if not_ids
+                    q = f'track:"{song_name}" artist:"{artist_name}"'
+                    search_type = "track"
+                    limit = 1 if song_name else ARTIST_TOP_TRACKS
 
-                LOGGER.info("collecting meta for %s" % q)
-                items = self.sp.search(q=q, type=search_type, limit=limit)["tracks"]["items"]
+                    LOGGER.info("collecting meta for %s" % q)
+                    items = self.sp.search(q=q, type=search_type, limit=limit)["tracks"]["items"]
 
-                if not items:
-                    if raise_not_found:
-                        raise ValueError("no song found for query: %s" % q)
-                    LOGGER.info("no song found for %s" % q)
-                    return list()
+                    if not items:
+                        if raise_not_found:
+                            raise ValueError("no song found for query: %s" % q)
+                        LOGGER.info("no song found for %s" % q)
+                        return list()
+                else: # if ids
+                    pass
 
             except SpotifyException:
                 # import time

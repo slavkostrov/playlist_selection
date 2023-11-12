@@ -34,7 +34,7 @@ class TrackDetails(BaseModel):
     bars_mean_duration: float| None = Field(default=None)
     # beats
     beats_number: int | None = Field(default=None)
-    beats_mean_duration: float = Field(default=None)
+    beats_mean_duration: float | None = Field(default=None)
     # tatums
     tatums_number: int | None = Field(default=None)
     tatums_mean_duration: float | None = Field(default=None)

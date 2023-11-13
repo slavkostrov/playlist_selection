@@ -36,7 +36,7 @@ class S3Dataset(BaseDataset):
     
     def __init__(
         self,
-        s3_client: botocore.client.S3,
+        s3_client: "botocore.client.S3",
         bucket_name: str,
         prefix: str,
     ):
@@ -97,7 +97,7 @@ class S3Dataset(BaseDataset):
     def __iter__(self) -> tp.Iterator[Track]:
         """Return iterator for tracks."""
         if not hasattr(self, "dataset_"):
-            raise RuntimeError("Scan dataset with .scat() method.")
+            raise RuntimeError("Scan dataset with .scan() method.")
         
         for key, obj in self.dataset_.items():  # noqa: UP028
             # TODO: add audio download and transforms
@@ -106,6 +106,9 @@ class S3Dataset(BaseDataset):
 
     def to_pandas(self) -> pd.DataFrame:
         """Generate pandas dataframe with dataset info."""
+        if not hasattr(self, "dataset_"):
+            raise RuntimeError("Scan dataset with .scan() method.")
+        
         data = []
         for key, obj in self.dataset_.items():
             row = dict(key=key)

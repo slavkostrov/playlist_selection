@@ -258,11 +258,12 @@ class SpotifyParser(BaseParser):
         base_meta = []
         tracks_meta = []
         # Both song name and artist
-        for song in song_list:
-            base_meta.extend(executor_fn(*song))
-            if len(base_meta) >= 50:
-                tracks_meta.extend(self._get_audio_features(base_meta))
-                base_meta = base_meta[50:]
+        if song_list:
+            for song in song_list:
+                base_meta.extend(executor_fn(*song))
+                if len(base_meta) >= 50:
+                    tracks_meta.extend(self._get_audio_features(base_meta))
+                    base_meta = base_meta[50:]
         if base_meta:
             tracks_meta.extend(self._get_audio_features(base_meta))
 

@@ -200,7 +200,6 @@ class SpotifyParser(BaseParser):
         track_ids: list[str] | None = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta] | None:
-        # time.sleep(30 * np.random.uniform(1, 3))
         while True:
             
             try:
@@ -228,8 +227,6 @@ class SpotifyParser(BaseParser):
                         track_ids_slice = track_ids[batch_start:batch_start + 50]
                         items = self.sp.tracks(tracks=track_ids_slice)["tracks"]
             except SpotifyException:
-                # import time
-                # time.sleep(60 * np.random.uniform(1, 3))
                 raise
             else:
                 break

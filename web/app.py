@@ -9,18 +9,24 @@ import typing as tp
 app = Flask(__name__)
 app.secret_key = os.urandom(64)
 
+# TODO: validate app args (host/port/tokens), maybe without environ usage
+HOST = os.environ["PLAYLIST_SELECTION_HOST"]
 PORT = os.environ["PLAYLIST_SELECTION_PORT"]
+
 sp_oauth = SpotifyOAuth(
     client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
     client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
+    # redirect url needs to be added in spotify app settings on dev dashboard
     redirect_uri=os.environ["PLAYLIST_SELECTION_CALLBACK_URL"],
     scope="user-library-read playlist-modify-private", # TODO: check values
 )
 
 
 def create_spotipy(func: tp.Callable) -> tp.Callable:
-    """Validate token and create spotipy object."""
-
+    """Validate token and pass spotipy object into function.
+    
+    All endpoints with spotipy usage need to be decorated with it.
+    """
     # TODO: Add token refresh
     def foo(*args, **kwargs):
         token_info = session.get("token_info", None)
@@ -47,10 +53,11 @@ def login():
 
 @app.route("/callback/")
 def callback():
-    """Callback after spotify side login. Save token to current session."""
+    """Callback after spotify side login. Save token to current session and redirect to main page."""
     token_info = sp_oauth.get_access_token(request.args["code"])
     session["token_info"] = token_info
-    return redirect("/generate")  # Redirect to app's main page
+    return redirect("/generate")
+
 
 @app.route("/generate")
 @create_spotipy
@@ -58,9 +65,12 @@ def generate_playlist(sp: spotipy.Spotify):
     """Generate playlists from user request."""
     # TODO: add baseline model usage
     # TODO: add query playlist/songs selection
-
     playlists = sp.current_user_playlists()
     return playlists
 
+
+# TODO: think about security, tokens storage etc
+# TODO: read spotify-dev doc about possible restrictions
+# TODO: think about processing multiple users at the same time
 if __name__ == "__main__":
-    app.run(host="localhost", port=PORT, debug=True)
+    app.run(host=HOST, port=PORT, debug=True)

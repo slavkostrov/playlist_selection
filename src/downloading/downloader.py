@@ -16,7 +16,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pytube import YouTube
 from pytube import Search
 
-DOWNLOADER_N_JOBS = 8
 
 LOGGER = logging.getLogger("downloader_logger")
 with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:

@@ -27,9 +27,14 @@ def create_spotipy(func: tp.Callable) -> tp.Callable:
     
     All endpoints with spotipy usage need to be decorated with it.
     """
-    # TODO: Add token refresh
+    # TODO: Add token refresh (maybe spotipy alredy do it)
+    # sp_oauth.refresh_access_token()
     def foo(*args, **kwargs):
         token_info = session.get("token_info", None)
+        refreshed_token_info = sp_oauth.validate_token(token_info) # contains refresh if expired
+        if refreshed_token_info != token_info:
+            token_info = refreshed_token_info
+            session["token_info"] = token_info
         if not token_info:
             return redirect("/login")
         sp = spotipy.Spotify(auth=token_info["access_token"])
@@ -42,6 +47,12 @@ def create_spotipy(func: tp.Callable) -> tp.Callable:
 
     return foo
         
+
+@app.route("/")
+def index():
+    """Main page."""
+    return redirect("/generate")
+
 
 @app.route("/login")
 def login():

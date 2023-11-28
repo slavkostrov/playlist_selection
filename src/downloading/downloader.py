@@ -115,7 +115,7 @@ class YouTubeDownloader(BaseDownloader):
         folder_name = (song_list[0] + song_list[1]).replace(" ", "_")
         filename_path = f"{prefix}/{folder_name}/audio.mp3"
         obj_body = f"{temp_dir}/{song_list[0]}-{song_list[1]}.mp3"
-        print("S3 uploading to %s.", filename_path)
+        LOGGER.info("S3 uploading to %s.", filename_path)
         s3_client.upload_file(Filename=obj_body, Bucket=bucket_name, Key=filename_path)
 
         return f"{schema}://{host}/{bucket_name}"

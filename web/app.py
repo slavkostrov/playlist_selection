@@ -5,6 +5,7 @@ from flask import Flask, redirect, request, session
 import os
 import typing as tp
 
+from loguru import logger
 
 app = Flask(__name__)
 app.secret_key = os.urandom(64)
@@ -33,9 +34,11 @@ def create_spotipy(func: tp.Callable) -> tp.Callable:
         token_info = session.get("token_info", None)
         refreshed_token_info = sp_oauth.validate_token(token_info) # contains refresh if expired
         if refreshed_token_info != token_info:
+            logger.debug("Updating actual token info.")
             token_info = refreshed_token_info
             session["token_info"] = token_info
         if not token_info:
+            logger.debug("Token info not found, redirect to login.")
             return redirect("/login")
         sp = spotipy.Spotify(auth=token_info["access_token"])
         return func(*args, **kwargs, sp=sp)
@@ -68,6 +71,29 @@ def callback():
     token_info = sp_oauth.get_access_token(request.args["code"])
     session["token_info"] = token_info
     return redirect("/generate")
+
+
+# TODO: add decorator?
+def create_playlist(
+    sp: spotipy.Spotify,
+    name: str,
+    songs: list[str],
+):
+    """Create playlist with given songs."""
+    user_playlists = sp.current_user_playlists()
+    user_playlists_names = [playlist.get("name") for playlist in user_playlists.get("items")]
+    while (name := name + "1") in user_playlists_names:
+        pass
+
+    user = sp.current_user()
+    logger.info("Creating new playlist for user %s with name %s.", user["id"], name)
+    playlist = sp.user_playlist_create(
+        user=user["id"],
+        name=name,
+        public=False,
+    )
+    logger.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
+    sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
 
 
 @app.route("/generate")

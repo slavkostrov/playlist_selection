@@ -2,22 +2,22 @@
 import json
 import logging
 import os
+import uuid
 
-# import redis
+import redis
 import spotipy
 from fastapi import Depends, FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from spotipy.oauth2 import SpotifyOAuth
-# from spotipy.cache_handler import RedisCacheHandler
+from spotipy.cache_handler import RedisCacheHandler
 from starlette.middleware.sessions import SessionMiddleware
 
 logger = logging.getLogger()
 
 # TODO: correct setup
-# redis_db = redis.Redis(host='localhost', port=6379, db=0)
-# cache_handler = RedisCacheHandler(redis_db)
+redis_db = redis.Redis(host='localhost', port=6379, db=0)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -28,11 +28,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key=os.urandom(64))
 
 # TODO: validate app args (host/port/tokens), maybe without environ usage
-HOST = "localhost" # os.environ["PLAYLIST_SELECTION_HOST"]
-PORT = 5000 # os.environ["PLAYLIST_SELECTION_PORT"]
+HOST = os.environ["PLAYLIST_SELECTION_HOST"]
+PORT = os.environ["PLAYLIST_SELECTION_PORT"]
 
-# TODO: Add redis as token cache storage
-sp_oauth = 
+def _get_auth(request: Request):
+    if "session_uuid" not in request.session.keys():
+        request.session["session_uuid"] = str(uuid.uuid4())
+    cache_handler = RedisCacheHandler(redis_db, key=request.session["session_uuid"])
+    sp_oauth = SpotifyOAuth(
+        client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
+        client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
+        # redirect url needs to be added in spotify app settings on dev dashboard
+        redirect_uri=os.environ["PLAYLIST_SELECTION_CALLBACK_URL"],
+        scope="user-library-read playlist-modify-private playlist-read-private", # TODO: check values
+        cache_handler=cache_handler,
+    )
+    return sp_oauth
 
 
 def _create_spotipy(access_token: str) -> spotipy.Spotify:
@@ -49,10 +60,9 @@ async def exception_handler(request: Request, exc: RequiresLoginException) -> Re
     return RedirectResponse(url='/login')
 
 
-def create_spotipy(request: Request):
+def create_spotipy(request: Request, sp_oauth: SpotifyOAuth = Depends(_get_auth)):
     """Create spotipy objects, dependency for endpoints."""
-    token_info = request.session.get("token_info")
-    token_info = sp_oauth.validate_token(token_info)
+    token_info = sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
     if not token_info:
         return RequiresLoginException
     sp = _create_spotipy(access_token=token_info["access_token"])
@@ -102,7 +112,7 @@ def logout(request: Request):
 
 
 @app.get("/login")
-def login(request: Request):
+def login(request: Request, sp_oauth: SpotifyOAuth = Depends(_get_auth)):
     """Login URL, save meta info about user, redirect to spotify OAuth."""
     auth_url = sp_oauth.get_authorize_url()
     request.session["token_info"] = sp_oauth.get_cached_token()
@@ -110,7 +120,7 @@ def login(request: Request):
 
 
 @app.get("/callback/")
-def callback(request: Request, code: str):
+def callback(request: Request, code: str, sp_oauth: SpotifyOAuth = Depends(_get_auth)):
     """Callback after spotify side login. Save token to current session and redirect to main page."""
     token_info = sp_oauth.get_access_token(code)
     request.session["token_info"] = token_info

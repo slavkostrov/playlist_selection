@@ -1,21 +1,30 @@
 """Baseline implementation of playlist selection web app."""
 import json
-from fastapi import FastAPI, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+import logging
+import os
+
+# import redis
+import spotipy
+from fastapi import Depends, FastAPI, Request, Response
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from loguru import logger
-import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import os
-import typing as tp
-
+# from spotipy.cache_handler import RedisCacheHandler
 from starlette.middleware.sessions import SessionMiddleware
+
+logger = logging.getLogger()
+
+# TODO: correct setup
+# redis_db = redis.Redis(host='localhost', port=6379, db=0)
+# cache_handler = RedisCacheHandler(redis_db)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
 app.secret_key = os.urandom(64)
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# TODO: remove session usage?
 app.add_middleware(SessionMiddleware, secret_key=os.urandom(64))
 
 # TODO: validate app args (host/port/tokens), maybe without environ usage
@@ -31,32 +40,23 @@ def _create_spotipy(access_token: str) -> spotipy.Spotify:
     return spotipy.Spotify(access_token)
 
 
-def create_spotipy(func: tp.Callable) -> tp.Callable:
-    """Validate token and pass spotipy object into function.
-    
-    All endpoints with spotipy usage need to be decorated with it.
-    """
-    # TODO: Add token refresh (maybe spotipy alredy do it)
-    # sp_oauth.refresh_access_token()
-    def foo(request: Request, *args, **kwargs):
-        token_info = request.session.get("token_info", None)
-        refreshed_token_info = sp_oauth.validate_token(token_info) # contains refresh if expired
-        if refreshed_token_info != token_info:
-            logger.debug("Updating actual token info.")
-            token_info = refreshed_token_info
-            request.session["token_info"] = token_info
-        if not token_info:
-            logger.debug("Token info not found, redirect to login.")
-            return RedirectResponse("/login")
-        sp = _create_spotipy(access_token=token_info["access_token"])
-        return func(request, *args, **kwargs, sp=sp)
+class RequiresLoginException(Exception):  # noqa: D101
+    pass
 
-    # get error while using functools.wraps :(
-    foo.__name__ = func.__name__
-    foo.__qualname__ = func.__qualname__
-    foo.__doc__ = func.__doc__
+@app.exception_handler(RequiresLoginException)
+async def exception_handler(request: Request, exc: RequiresLoginException) -> Response:
+    """Handler for requires login exception, redirect to login page."""
+    return RedirectResponse(url='/login')
 
-    return foo
+
+def create_spotipy(request: Request):
+    """Create spotipy objects, dependency for endpoints."""
+    token_info = request.session.get("token_info")
+    token_info = sp_oauth.validate_token(token_info)
+    if not token_info:
+        return RequiresLoginException
+    sp = _create_spotipy(access_token=token_info["access_token"])
+    return sp
 
 
 def get_user_songs(sp: spotipy.Spotify) -> dict[str, str]:
@@ -82,7 +82,7 @@ def get_user_songs(sp: spotipy.Spotify) -> dict[str, str]:
     return songs
     
 
-@app.route("/")
+@app.get("/")
 def index(request: Request):
     """Main page."""
     token_info = request.session.get("token_info")
@@ -93,7 +93,7 @@ def index(request: Request):
     return templates.TemplateResponse("home.html", dict(request=request, songs=songs))
 
 
-@app.route("/logout")
+@app.get("/logout")
 def logout(request: Request):
     """Logout URL, remove token info from session."""
     if "token_info" in request.session.keys():
@@ -101,7 +101,7 @@ def logout(request: Request):
     return RedirectResponse("/")
 
 
-@app.route("/login")
+@app.get("/login")
 def login(request: Request):
     """Login URL, save meta info about user, redirect to spotify OAuth."""
     auth_url = sp_oauth.get_authorize_url()
@@ -147,31 +147,24 @@ def _create_playlist(
 
 
 @app.post("/generate")
-# @create_spotipy
-async def generate_playlist(request: Request): # , sp: spotipy.Spotify):
+async def generate_playlist(request: Request):
     """Generate playlists from user request."""
-    sp = _create_spotipy(request.session.get("token_info").get("access_token"))
-    if request.method == "POST":
-        # TODO: remove IF
-        form = await request.form()
-        selected_songs_json = form.get('selected_songs_json')
-        selected_songs = json.loads(selected_songs_json)
-        # TODO: add baseline model usage
-        return templates.TemplateResponse(
-            "confirm_playlist.html",
-            dict(
-                request=request,
-                songs=selected_songs,
-                selected_songs_json=selected_songs_json
-            ),
-        )
-    playlists = sp.current_user_playlists()
-    return playlists
+    form = await request.form()
+    selected_songs_json = form.get('selected_songs_json')
+    selected_songs = json.loads(selected_songs_json)
+    # TODO: add baseline model usage
+    return templates.TemplateResponse(
+        "confirm_playlist.html",
+        dict(
+            request=request,
+            songs=selected_songs,
+            selected_songs_json=selected_songs_json
+        ),
+    )
 
 @app.post("/create")
-async def create_playlist(request: Request):
+async def create_playlist(request: Request, sp = Depends(create_spotipy)):
     """Create playlist for user."""
-    sp = _create_spotipy(request.session["token_info"]["access_token"])
     form = await request.form()
     selected_songs_json = form.get('selected_songs_json')
     selected_songs = json.loads(selected_songs_json)

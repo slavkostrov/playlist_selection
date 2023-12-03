@@ -79,7 +79,7 @@ def callback():
     """Callback after spotify side login. Save token to current session and redirect to main page."""
     token_info = sp_oauth.get_access_token(request.args["code"])
     session["token_info"] = token_info
-    return redirect("/generate")
+    return redirect("/")
 
 
 # TODO: add decorator?

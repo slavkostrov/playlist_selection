@@ -1,7 +1,8 @@
 """Baseline implementation of playlist selection web app."""
+import json
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-from flask import Flask, redirect, request, session
+from flask import Flask, redirect, request, session, render_template
 import os
 import typing as tp
 
@@ -14,6 +15,7 @@ app.secret_key = os.urandom(64)
 HOST = os.environ["PLAYLIST_SELECTION_HOST"]
 PORT = os.environ["PLAYLIST_SELECTION_PORT"]
 
+# TODO: Add redis as token cache storage
 sp_oauth = SpotifyOAuth(
     client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
     client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
@@ -54,12 +56,48 @@ def create_spotipy(func: tp.Callable) -> tp.Callable:
     foo.__doc__ = func.__doc__
 
     return foo
-        
+
+
+def get_user_songs(sp: spotipy.Spotify) -> dict[str, str]:
+    """Return saved songs of current user."""
+    results = sp.current_user_saved_tracks(limit=5)
+    # total - total songs number
+    # limit - limit of songs per 1 request
+    # TODO: add search in form
+    # TODO: add pages in form
+    # TODO: save all selected tracks 
+    songs = []
+    # TODO: add some cache?
+    for idx, item in enumerate(results['items']):
+        track = item['track']
+        songs.append(
+            {
+                "id": idx,
+                "track_id": track.get("id"),
+                "artist": ", ".join(map(lambda artist: artist.get("name"), track['artists'])),
+                "name": track['name']
+            }
+        )
+    return songs
+    
 
 @app.route("/")
 def index():
     """Main page."""
-    return redirect("/generate")
+    token_info = session.get("token_info")
+    songs = []
+    if token_info is not None:
+        sp = _create_spotipy(token_info["access_token"])
+        songs = get_user_songs(sp=sp)        
+    return render_template("home.html", songs=songs)
+
+
+@app.route("/logout")
+def logout():
+    """Logout URL, remove token info from session."""
+    if "token_info" in session.keys():
+        session.pop("token_info")
+    return redirect("/")
 
 
 @app.route("/login")
@@ -67,10 +105,6 @@ def login():
     """Login URL, save meta info about user, redirect to spotify OAuth."""
     auth_url = sp_oauth.get_authorize_url()
     session["token_info"] = sp_oauth.get_cached_token()
-    if "token_info" in session.keys():
-        sp = _create_spotipy(access_token=session["token_info"]["access_token"])
-        # TODO: validate, maybe unsecure?
-        session["current_user"] = sp.current_user()
     return redirect(auth_url)
 
 
@@ -79,21 +113,25 @@ def callback():
     """Callback after spotify side login. Save token to current session and redirect to main page."""
     token_info = sp_oauth.get_access_token(request.args["code"])
     session["token_info"] = token_info
+    sp = _create_spotipy(access_token=token_info["access_token"])
+    # TODO: validate, maybe unsecure?
+    session["current_user"] = sp.current_user()
     return redirect("/")
 
 
 # TODO: add decorator?
-def create_playlist(
+def _create_playlist(
     sp: spotipy.Spotify,
     name: str,
     songs: list[str],
 ):
     """Create playlist with given songs."""
-    user_playlists = sp.current_user_playlists()
-    user_playlists_names = [playlist.get("name") for playlist in user_playlists.get("items")]
-    while name in user_playlists_names:
-        name = name + "1"
-        logger.warning("Playlist with given name already exists, updated name to %s", name)
+    # user_playlists = sp.current_user_playlists()
+    # Spotify can create playlists with same name, delete?
+    # user_playlists_names = [playlist.get("name") for playlist in user_playlists.get("items")]
+    # while name in user_playlists_names:
+    #     name = name + "1"
+    #     logger.warning("Playlist with given name already exists, updated name to %s", name)
 
     user = sp.current_user()
     logger.info("Creating new playlist for user %s with name %s.", user["id"], name)
@@ -104,16 +142,35 @@ def create_playlist(
     )
     logger.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
     sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
+    return sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
 
 
-@app.route("/generate")
+@app.route("/generate", methods=["POST"])
 @create_spotipy
 def generate_playlist(sp: spotipy.Spotify):
     """Generate playlists from user request."""
-    # TODO: add baseline model usage
-    # TODO: add query playlist/songs selection
+    if request.method == "POST":
+        # TODO: remove IF
+        selected_songs_json = request.form.get('selected_songs_json')
+        selected_songs = json.loads(selected_songs_json)
+        # TODO: add baseline model usage
+        return render_template(
+            "confirm_playlist.html",
+            songs=selected_songs,
+            selected_songs_json=selected_songs_json,
+        )
     playlists = sp.current_user_playlists()
     return playlists
+
+@app.route("/create", methods=["POST"])
+def create_playlist():
+    """Create playlist for user."""
+    sp = _create_spotipy(session["token_info"]["access_token"])
+    selected_songs_json = request.form.get('selected_songs_json')
+    selected_songs = json.loads(selected_songs_json)
+    recommended_songs = [value["track_id"] for value in selected_songs]
+    # TODO: update
+    return _create_playlist(sp=sp, name="TEST", songs=recommended_songs)
 
 
 # TODO: think about security, tokens storage etc

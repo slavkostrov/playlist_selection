@@ -23,6 +23,11 @@ sp_oauth = SpotifyOAuth(
 )
 
 
+def _create_spotipy(access_token: str) -> spotipy.Spotify:
+    """Create spotipy object, use access token for authorization."""
+    return spotipy.Spotify(access_token)
+
+
 def create_spotipy(func: tp.Callable) -> tp.Callable:
     """Validate token and pass spotipy object into function.
     
@@ -40,7 +45,7 @@ def create_spotipy(func: tp.Callable) -> tp.Callable:
         if not token_info:
             logger.debug("Token info not found, redirect to login.")
             return redirect("/login")
-        sp = spotipy.Spotify(auth=token_info["access_token"])
+        sp = _create_spotipy(access_token=token_info["access_token"])
         return func(*args, **kwargs, sp=sp)
 
     # get error while using functools.wraps :(
@@ -59,9 +64,13 @@ def index():
 
 @app.route("/login")
 def login():
-    """Login URL, redirect to spotify OAuth."""
+    """Login URL, save meta info about user, redirect to spotify OAuth."""
     auth_url = sp_oauth.get_authorize_url()
     session["token_info"] = sp_oauth.get_cached_token()
+    if "token_info" in session.keys():
+        sp = _create_spotipy(access_token=session["token_info"]["access_token"])
+        # TODO: validate, maybe unsecure?
+        session["current_user"] = sp.current_user()
     return redirect(auth_url)
 
 

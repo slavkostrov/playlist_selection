@@ -82,7 +82,8 @@ def create_playlist(
     """Create playlist with given songs."""
     user_playlists = sp.current_user_playlists()
     user_playlists_names = [playlist.get("name") for playlist in user_playlists.get("items")]
-    while (name := name + "1") in user_playlists_names:
+    while name in user_playlists_names:
+        name = name + "1"
         logger.warning("Playlist with given name already exists, updated name to %s", name)
 
     user = sp.current_user()

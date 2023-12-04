@@ -85,7 +85,7 @@ class TrackMeta(BaseModel):
         elif re.match(r'\d{4}', value):
             return f"{value}-01-01"
         else:
-            raise RuntimeError("Validation error.") # TODO: fix
+            raise ValueError(f"Incorrect value in album_release_date: '{value}'.")
 
     @classmethod
     def load_from_json(cls, filename: str):

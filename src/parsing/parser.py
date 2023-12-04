@@ -5,7 +5,6 @@ import logging.config
 import typing as tp
 import yaml
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 import boto3
@@ -13,17 +12,19 @@ import numpy as np
 import spotipy as sp
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from tracks.meta import TrackMeta, TrackDetails
+from ..tracks.meta import TrackMeta, TrackDetails
 
+from pathlib import Path
+from spotipy.exceptions import SpotifyException
 
 LOGGER = logging.getLogger("parser_logger")
-with open("logging_config/logging_config.yml") as fin:
+with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
     logging.config.dictConfig(yaml.safe_load(fin))
 
 
 SPOTIFY_TOKEN_REFRESH_TIME_MINUTES = 55 # In minutes
 ARTIST_TOP_TRACKS = 5 # Number of tracks to collect by artist search
-PARSER_N_JOBS = 8 # Number of threads to create while parsing
+PARSER_N_JOBS = 1 # Number of threads to create while parsing
 
 
 class BaseParser(ABC):
@@ -130,6 +131,8 @@ class SpotifyParser(BaseParser):
         for key in analysis_reponse:
             if key in ["meta", "track"]:
                 continue
+            if not analysis_reponse[key]:
+                continue
             temp_res = get_single_feature_params(
                 analysis_reponse[key],
                 interval_name=key,
@@ -138,7 +141,7 @@ class SpotifyParser(BaseParser):
             res.update(temp_res)
         return res
 
-    def _get_meta_dict(self, track_features, audio_features):
+    def _get_meta_dict(self, track_features, audio_features, artist_info):
         track_meta = {
             "album_name": track_features["album"]["name"] if "album" in track_features else None,
             "album_id": track_features["album"]["id"] if "album" in track_features else None,
@@ -168,62 +171,78 @@ class SpotifyParser(BaseParser):
         }
         audio_analysis = self.sp.audio_analysis(track_id=track_meta["track_id"])
         track_details.update(**self._get_audio_analysis_info(audio_analysis))
-
-        artist_info = self.sp.artist(track_meta["artist_id"][0])
         track_meta.update({"genres": artist_info["genres"]})
 
         return track_meta, track_details
+
+    def _get_audio_features(self, base_meta):
+        track_ids = list(map(lambda x: x.get("id"), base_meta))
+        audio_features = self.sp.audio_features(tracks=track_ids)
+
+        artist_ids = list(map(lambda x: x["artists"][0]["id"], base_meta))
+        artist_infos = self.sp.artists(artists=artist_ids)["artists"]
+        tracks_meta = []
+        for track_feats, audio_feats, artist_info in zip(base_meta, audio_features, artist_infos):
+            # Merge all info into specific format
+            try:
+                track_meta, track_details = self._get_meta_dict(track_feats, audio_feats, artist_info)
+            except IndexError as e:
+                LOGGER.error(e, exc_info=e)
+                continue
+            track_meta["track_details"] = TrackDetails(**track_details)
+            tracks_meta.append(TrackMeta(**track_meta))
+        return tracks_meta
 
     def _parse_single_song(
         self,
         song_name: str | None = None,
         artist_name: str | None = None,
+        track_ids: list[str] | None = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta] | None:
-        self.refresh_token()
+        while True:
+            
+            try:
+                self.refresh_token()
 
-        song_name = song_name or ""
-        artist_name = artist_name or ""
+                song_name = song_name or ""
+                artist_name = artist_name or ""
 
-        # Create search query
-        q = f'track:"{song_name}" artist:"{artist_name}"'
-        search_type = "track"
-        limit = 1 if song_name else ARTIST_TOP_TRACKS
+                # Create search query
+                if not track_ids:
+                    q = f'track:"{song_name}" artist:"{artist_name}"'
+                    search_type = "track"
+                    limit = 1 if song_name else ARTIST_TOP_TRACKS
 
-        LOGGER.info("collecting meta for %s" % q)
-        items = self.sp.search(q=q, type=search_type, limit=limit)["tracks"]["items"]
+                    LOGGER.info("collecting meta for %s" % q)
+                    items = self.sp.search(q=q, type=search_type, limit=limit)["tracks"]["items"]
 
-        if not items:
-            if raise_not_found:
-                raise ValueError("no song found for query: %s" % q)
-            LOGGER.info("no song found for %s" % q)
-            return
-        
-        # Get audio features
-        track_ids = list(map(lambda x: x.get("id"), items))
-        audio_features = self.sp.audio_features(tracks=track_ids)
+                    if not items:
+                        if raise_not_found:
+                            raise ValueError("no song found for query: %s" % q)
+                        LOGGER.info("no song found for %s" % q)
+                        return list()
+                else:
+                    for batch_start in range(0, len(track_ids), 50):
+                        track_ids_slice = track_ids[batch_start:batch_start + 50]
+                        items = self.sp.tracks(tracks=track_ids_slice)["tracks"]
+            except SpotifyException:
+                raise
+            else:
+                break
 
-        tracks_meta = []
-        for track_feats, audio_feats in zip(items, audio_features):
-            # Merge all info into specific format
-            track_meta, track_details = self._get_meta_dict(track_feats, audio_feats)
-            track_meta["track_details"] = TrackDetails(**track_details)
-            tracks_meta.append(TrackMeta(**track_meta))
-
-        return tracks_meta
+        return items
 
     def parse(
         self, 
         song_list: list[tuple[str, str]] | None  = None,
-        song_name_list: list[str] | None  = None,
-        artist_list: list[str] | None  = None,
+        track_id_list: list[str] | None = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta]:
         """Parse tracks meta data.
         
         :param song_list list[tuple[str, str]] | None: List of [(song_name, artist), ...]
-        :param song_name_list list[str] | None: List of song names
-        :param artist_list list[str] | None: List of artists
+        :param list[str] | None track_id_list: List of spotify track ids
         :param bool raise_not_found: if True raises for not found songs
 
         :return list[TrackMeta]: List of collected meta
@@ -233,26 +252,30 @@ class SpotifyParser(BaseParser):
             raise_not_found=raise_not_found,
         )
         
+        base_meta = []
         tracks_meta = []
         # Both song name and artist
         if song_list:
-            with ThreadPoolExecutor(PARSER_N_JOBS) as executor:
-                meta = list(executor.map(lambda args: executor_fn(*args), song_list))
-                tracks_meta.extend(meta)
-        
-        # Only song name
-        if song_name_list:
-            with ThreadPoolExecutor(PARSER_N_JOBS) as executor:
-                meta = list(executor.map(lambda arg: executor_fn(song_name=arg), song_name_list))
-                tracks_meta.extend(meta)
+            for song in song_list:
+                base_meta.extend(executor_fn(*song))
+                if len(base_meta) >= 50:
+                    tracks_meta.extend(self._get_audio_features(base_meta))
+                    base_meta = base_meta[50:]
+        if base_meta:
+            tracks_meta.extend(self._get_audio_features(base_meta))
 
-        # Only artist (returns top ARTIST_TOP_TRACKS tracks from search)
-        if artist_list:
-            with ThreadPoolExecutor(PARSER_N_JOBS) as executor:
-                meta = list(executor.map(lambda arg: executor_fn(artist_name=arg), artist_list))
-                tracks_meta.extend(meta)
 
-        return np.hstack(tracks_meta).tolist()
+        if track_id_list:
+            base_meta = self._parse_single_song(track_ids=track_id_list)
+            for batch_start in range(0, len(base_meta), 50):
+                base_meta_slice = base_meta[batch_start:batch_start + 50]
+                tracks_meta.extend(self._get_audio_features(base_meta_slice))
+
+
+        if len(tracks_meta) == 0:
+            return list()
+
+        return tracks_meta
 
     def load_to_s3(
         self,
@@ -260,6 +283,7 @@ class SpotifyParser(BaseParser):
         host: str,
         bucket_name: str,
         tracks_meta: list[TrackMeta],
+        prefix: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
         raise_wrong_type=False,
@@ -293,7 +317,7 @@ class SpotifyParser(BaseParser):
                 LOGGER.info("expected type TrackMeta, got: %s" % track)
                 continue
 
-            filename = f"{track.s3_save_filename}.json"
+            filename = f"{track.get_s3_save_filename(prefix=prefix)}.json"
             obj_body = track.json()
             LOGGER.info("saving %s" % filename)
             s3_client.put_object(Bucket=bucket_name, Key=filename, Body=obj_body)

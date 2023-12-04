@@ -1,4 +1,5 @@
 """Module with downloaders implementation."""
+from pathlib import Path
 import yaml
 import boto3
 import tempfile
@@ -15,8 +16,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pytube import YouTube
 from pytube import Search
 
+
 LOGGER = logging.getLogger("downloader_logger")
-with open("logger_config/logging_config.yml") as fin:
+with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
     logging.config.dictConfig(yaml.safe_load(fin))
 
 
@@ -53,7 +55,7 @@ class YouTubeDownloader(BaseDownloader):
 
         :return YouTube: class with YouTube song metadata
         """
-        youtube_video = Search(f"{song_list[1]} by {song_list[0]}").results[0]
+        youtube_video = Search(f"{song_list[0]} by {song_list[1]}").results[0]
         yt_video_metadata = youtube_video.streams.filter(only_audio=True).first()
 
         return yt_video_metadata
@@ -68,7 +70,6 @@ class YouTubeDownloader(BaseDownloader):
 
         :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
         :param temp_dir: str | None: local directory for downloading
-
         :return None
         """
         LOGGER.info("search for track audio")
@@ -83,6 +84,7 @@ class YouTubeDownloader(BaseDownloader):
         schema: str,
         host: str,
         bucket_name: str,
+        prefix: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
         temp_dir: str | None = None,
@@ -109,9 +111,10 @@ class YouTubeDownloader(BaseDownloader):
             aws_secret_access_key=aws_secret_access_key,
             endpoint_url=f"{schema}://{host}",
         )
-        filename_path = f"tracks/{song_list[0]}-{song_list[1]}.mp3"
+        folder_name = (song_list[0] + song_list[1]).replace(" ", "_")
+        filename_path = f"{prefix}/{folder_name}/audio.mp3"
         obj_body = f"{temp_dir}/{song_list[0]}-{song_list[1]}.mp3"
-        LOGGER.info("s3 uploading")
+        LOGGER.info("S3 uploading to %s.", filename_path)
         s3_client.upload_file(Filename=obj_body, Bucket=bucket_name, Key=filename_path)
 
         return f"{schema}://{host}/{bucket_name}"
@@ -123,6 +126,7 @@ class YouTubeDownloader(BaseDownloader):
         schema: str,
         host: str,
         bucket_name: str,
+        prefix: str,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None, 
     ) -> None:
@@ -148,7 +152,8 @@ class YouTubeDownloader(BaseDownloader):
                 bucket_name=bucket_name, 
                 aws_access_key_id=aws_access_key_id, 
                 aws_secret_access_key=aws_secret_access_key, 
-                temp_dir=temp_dir
+                temp_dir=temp_dir,
+                prefix=prefix,
             )
 
 

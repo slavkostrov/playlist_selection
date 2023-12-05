@@ -11,8 +11,9 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from spotipy.oauth2 import SpotifyOAuth
-from spotipy.cache_handler import RedisCacheHandler
-from starlette.middleware.sessions import SessionMiddleware
+
+from dependency import SpotifyAuth, DEFAULT_USER_TOKEN_COOKIE
+from exceptions import RequiresLoginException, UnknownCookieException
 
 logger = logging.getLogger()
 
@@ -24,43 +25,29 @@ templates = Jinja2Templates(directory="templates")
 app.secret_key = os.urandom(64)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# TODO: remove session usage?
-app.add_middleware(SessionMiddleware, secret_key=os.urandom(64))
-
 # TODO: validate app args (host/port/tokens), maybe without environ usage
-HOST = os.environ["PLAYLIST_SELECTION_HOST"]
-PORT = os.environ["PLAYLIST_SELECTION_PORT"]
-
-def _get_auth(request: Request):
-    if "session_uuid" not in request.session.keys():
-        request.session["session_uuid"] = str(uuid.uuid4())
-    cache_handler = RedisCacheHandler(redis_db, key=request.session["session_uuid"])
-    sp_oauth = SpotifyOAuth(
-        client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
-        client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
-        # redirect url needs to be added in spotify app settings on dev dashboard
-        redirect_uri=os.environ["PLAYLIST_SELECTION_CALLBACK_URL"],
-        scope="user-library-read playlist-modify-private playlist-read-private", # TODO: check values
-        cache_handler=cache_handler,
-    )
-    return sp_oauth
-
+HOST = "localhost" # os.environ["PLAYLIST_SELECTION_HOST"]
+PORT = 5000 # os.environ["PLAYLIST_SELECTION_PORT"]
 
 def _create_spotipy(access_token: str) -> spotipy.Spotify:
     """Create spotipy object, use access token for authorization."""
     return spotipy.Spotify(access_token)
 
-
-class RequiresLoginException(Exception):  # noqa: D101
-    pass
-
 @app.exception_handler(RequiresLoginException)
-async def exception_handler(request: Request, exc: RequiresLoginException) -> Response:
+async def requires_login_exception_handler(request: Request, exc: RequiresLoginException) -> Response:
     """Handler for requires login exception, redirect to login page."""
     return RedirectResponse(url='/login')
 
+@app.exception_handler(UnknownCookieException)
+async def unknown_cookie_handler(request: Request, exc: RequiresLoginException) -> Response:
+    """Handler for unknown cookie exception, used for set cookie."""
+    redirect_response = RedirectResponse(url=request.url)
+    user_uuid = uuid.uuid4()
+    redirect_response.set_cookie(key=DEFAULT_USER_TOKEN_COOKIE, value=user_uuid)
+    return redirect_response
 
-def create_spotipy(request: Request, sp_oauth: SpotifyOAuth = Depends(_get_auth)):
+
+def create_spotipy(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
     """Create spotipy objects, dependency for endpoints."""
     token_info = sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
     if not token_info:
@@ -93,41 +80,48 @@ def get_user_songs(sp: spotipy.Spotify) -> dict[str, str]:
     
 
 @app.get("/")
-def index(request: Request):
+def index(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
     """Main page."""
-    token_info = request.session.get("token_info")
+    token_info = sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
     songs = []
+
+    current_user = None
     if token_info is not None:
         sp = _create_spotipy(token_info["access_token"])
+        current_user = sp.current_user()
         songs = get_user_songs(sp=sp)        
-    return templates.TemplateResponse("home.html", dict(request=request, songs=songs))
+
+    return templates.TemplateResponse(
+        "home.html",
+        dict(request=request, songs=songs, current_user=current_user),
+    )
 
 
 @app.get("/logout")
-def logout(request: Request):
+def logout(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
     """Logout URL, remove token info from session."""
-    if "token_info" in request.session.keys():
-        request.session.pop("token_info")
-    return RedirectResponse("/")
+    response = RedirectResponse("/")
+    response.delete_cookie(DEFAULT_USER_TOKEN_COOKIE)
+    response.delete_cookie(f"{DEFAULT_USER_TOKEN_COOKIE}_valid")
+    return response
 
 
 @app.get("/login")
-def login(request: Request, sp_oauth: SpotifyOAuth = Depends(_get_auth)):
+def login(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
     """Login URL, save meta info about user, redirect to spotify OAuth."""
     auth_url = sp_oauth.get_authorize_url()
-    request.session["token_info"] = sp_oauth.get_cached_token()
+    sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
     return RedirectResponse(auth_url)
 
 
 @app.get("/callback/")
-def callback(request: Request, code: str, sp_oauth: SpotifyOAuth = Depends(_get_auth)):
+def callback(request: Request, code: str, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
     """Callback after spotify side login. Save token to current session and redirect to main page."""
-    token_info = sp_oauth.get_access_token(code)
-    request.session["token_info"] = token_info
-    sp = _create_spotipy(access_token=token_info["access_token"])
-    # TODO: validate, maybe unsecure?
-    request.session["current_user"] = sp.current_user()
-    return RedirectResponse("/")
+    _access_token = sp_oauth.get_access_token(code, as_dict=False)  # noqa: F841, cache token inside
+    response = RedirectResponse("/")
+    # TODO: fix? use only one key in cookie?
+    response.set_cookie(key=f"{DEFAULT_USER_TOKEN_COOKIE}_valid", value="true")
+    return response
 
 
 # TODO: add decorator?

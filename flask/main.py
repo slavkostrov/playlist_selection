@@ -2,17 +2,18 @@
 import json
 import logging
 import os
+from typing import Annotated
 import uuid
 
 import redis
 import spotipy
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import Depends, FastAPI, Form, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from spotipy.oauth2 import SpotifyOAuth
 
-from dependency import SpotifyAuth, DEFAULT_USER_TOKEN_COOKIE
+from dependency import SpotifyAuth, DEFAULT_USER_TOKEN_COOKIE, SpotifyAuthCookie
 from exceptions import RequiresLoginException, UnknownCookieException
 
 logger = logging.getLogger()
@@ -20,7 +21,7 @@ logger = logging.getLogger()
 # TODO: correct setup
 redis_db = redis.Redis(host='localhost', port=6379, db=0)
 
-app = FastAPI()
+app = FastAPI(debug=True)
 templates = Jinja2Templates(directory="templates")
 app.secret_key = os.urandom(64)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -47,7 +48,7 @@ async def unknown_cookie_handler(request: Request, exc: RequiresLoginException) 
     return redirect_response
 
 
-def create_spotipy(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
+def Spotipy(sp_oauth: Annotated[SpotifyOAuth, Depends(SpotifyAuth(redis_db))]):
     """Create spotipy objects, dependency for endpoints."""
     token_info = sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
     if not token_info:
@@ -56,7 +57,7 @@ def create_spotipy(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAut
     return sp
 
 
-def get_user_songs(sp: spotipy.Spotify) -> dict[str, str]:
+def get_user_songs(sp: spotipy.Spotify) -> list[dict[str, str]]:
     """Return saved songs of current user."""
     results = sp.current_user_saved_tracks(limit=5)
     # total - total songs number
@@ -80,13 +81,12 @@ def get_user_songs(sp: spotipy.Spotify) -> dict[str, str]:
     
 
 @app.get("/")
-def index(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
+def index(request: Request, sp_oauth: Annotated[SpotifyOAuth, Depends(SpotifyAuth(redis_db))]):
     """Main page."""
-    token_info = sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
     songs = []
 
     current_user = None
-    if token_info is not None:
+    if (token_info := sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())):
         sp = _create_spotipy(token_info["access_token"])
         current_user = sp.current_user()
         songs = get_user_songs(sp=sp)        
@@ -98,29 +98,28 @@ def index(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_d
 
 
 @app.get("/logout")
-def logout(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
-    """Logout URL, remove token info from session."""
+def logout(request: Request):
+    """Logout URL, remove token key from cookies and token info from redis."""
     response = RedirectResponse("/")
+    if (token_key := request.cookies.get(DEFAULT_USER_TOKEN_COOKIE)):
+        # TODO: hide delete into auth class?
+        redis_db.delete(token_key)
     response.delete_cookie(DEFAULT_USER_TOKEN_COOKIE)
-    response.delete_cookie(f"{DEFAULT_USER_TOKEN_COOKIE}_valid")
     return response
 
 
 @app.get("/login")
-def login(request: Request, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
+def login(sp_oauth: Annotated[SpotifyOAuth, Depends(SpotifyAuth(redis_db))]):
     """Login URL, save meta info about user, redirect to spotify OAuth."""
     auth_url = sp_oauth.get_authorize_url()
-    sp_oauth.validate_token(sp_oauth.cache_handler.get_cached_token())
     return RedirectResponse(auth_url)
 
 
-@app.get("/callback/")
-def callback(request: Request, code: str, sp_oauth: SpotifyOAuth = Depends(SpotifyAuth(redis_db))):
+@app.get("/callback/", dependencies=[Depends(SpotifyAuthCookie())])
+def callback(code: str, sp_oauth: Annotated[SpotifyOAuth, Depends(SpotifyAuth(redis_db))]):
     """Callback after spotify side login. Save token to current session and redirect to main page."""
-    _access_token = sp_oauth.get_access_token(code, as_dict=False)  # noqa: F841, cache token inside
+    sp_oauth.get_access_token(code, as_dict=False)  # cache token inside
     response = RedirectResponse("/")
-    # TODO: fix? use only one key in cookie?
-    response.set_cookie(key=f"{DEFAULT_USER_TOKEN_COOKIE}_valid", value="true")
     return response
 
 
@@ -151,10 +150,8 @@ def _create_playlist(
 
 
 @app.post("/generate")
-async def generate_playlist(request: Request):
+async def generate_playlist(request: Request, selected_songs_json: Annotated[str, Form()]):
     """Generate playlists from user request."""
-    form = await request.form()
-    selected_songs_json = form.get('selected_songs_json')
     selected_songs = json.loads(selected_songs_json)
     # TODO: add baseline model usage
     return templates.TemplateResponse(
@@ -166,11 +163,10 @@ async def generate_playlist(request: Request):
         ),
     )
 
+
 @app.post("/create")
-async def create_playlist(request: Request, sp = Depends(create_spotipy)):
+async def create_playlist(selected_songs_json: Annotated[str, Form()], sp: Annotated[Spotipy, Depends(Spotipy)]):
     """Create playlist for user."""
-    form = await request.form()
-    selected_songs_json = form.get('selected_songs_json')
     selected_songs = json.loads(selected_songs_json)
     recommended_songs = [value["track_id"] for value in selected_songs]
     # TODO: update

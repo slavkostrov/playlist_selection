@@ -12,7 +12,7 @@
             <h1>PlaylistSelection</h1>
         </div>
         <div class="login-section">
-            {% if request.cookies.get('playlist_selection_user_id_valid') %}
+            {% if request.cookies.get('playlist_selection_user_id') %}
                 <a href="{{ url_for('logout') }}">Logout</a>
             {% else %}
                 <a href="{{ url_for('login') }}">Login with Spotify</a>

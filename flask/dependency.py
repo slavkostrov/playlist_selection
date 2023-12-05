@@ -1,7 +1,6 @@
 """Module with dependencies of endpoints."""
 
 import os
-import uuid
 
 from fastapi import Request
 from redis import Redis
@@ -11,29 +10,31 @@ from spotipy.oauth2 import SpotifyOAuth
 
 from exceptions import UnknownCookieException
 
+DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
 
 class SpotifyAuth:
     """Dependency from authorization in Spotify."""
     
-    def __init__(self, redis_db: Redis):
+    def __init__(self, redis_db: Redis):  # noqa: D417
         """Contstructor of dependency.
         
         Keyword Arguments:
-        redis_db -- Redis object of cached tokens database
+        redis_db -- Redis object of cached tokens database.
         """
         self._redis_db = redis_db
     
-    def __call__(self, request: Request) -> SpotifyOAuth:
+    def __call__(self, request: Request) -> SpotifyOAuth:  # noqa: D417
         """Call method of dependency.
 
         Keyword Arguments:
-        request -- Request - user request to endpoint
+        request -- Request - user request to endpoint.
         """
-        if "session_uuid" not in request.session.keys():
-            # TODO: update with cookie
-            request.session["session_uuid"] = str(uuid.uuid4())
+        user_token_cookie = request.cookies.get(DEFAULT_USER_TOKEN_COOKIE)
+        if user_token_cookie is None:
+            raise UnknownCookieException(url="AAA")
 
-        cache_handler = RedisCacheHandler(self._redis_db, key=request.session["session_uuid"])
+        cache_handler = RedisCacheHandler(self._redis_db, key=user_token_cookie)
+
         # TODO: move secrets to config?
         sp_oauth = SpotifyOAuth(
             client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],

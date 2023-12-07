@@ -1,4 +1,5 @@
-from .metrics import (  # noqa
+"""Metrics package."""
+from .metrics import (
     CorrectGenreShare,
     CorrectMultipleGenreShare,
     CorrectAlbumShare,

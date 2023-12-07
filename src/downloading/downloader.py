@@ -95,6 +95,7 @@ class YouTubeDownloader(BaseDownloader):
         :param schema str: s3 schema name
         :param host str: s3 host name
         :param bucket_name str: s3 bucket name
+        :param prefix str: save prefix on s3 bucket
         :param aws_access_key_id str | None: aws s3 access key id (statical)
         :param aws_secret_access_key str | None: aws s3 secret key (statical)
         :param temp_dir: str | None: local directory for downloading

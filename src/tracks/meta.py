@@ -88,9 +88,9 @@ class TrackMeta(BaseModel):
             raise ValueError(f"Incorrect value in album_release_date: '{value}'.")
 
     @classmethod
-    def load_from_json(cls, filename: str):
+    def load_from_json(cls, filename: str, encoding: str = "utf-8"):
         """Load track meta from json file."""
-        with open(filename) as fin:
+        with open(filename, encoding=encoding) as fin:
             params = json.load(fin)
         obj = cls(**params)
         return obj

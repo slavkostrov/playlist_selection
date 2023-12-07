@@ -169,7 +169,7 @@ class YouTubeDownloader(BaseDownloader):
         :param max_workers_num int: number of workers for ThreadPoolExecutor
         :return None
         """
-        song_list = [song if isinstance(song, Song) else Song(song[1], song[0]) for song in song_list]
+        song_list = [_fix_song(song) for song in song_list]
         LOGGER.info("start multiprocess audio downloading")
         with ThreadPoolExecutor(max_workers_num) as executor:
             list(executor.map(lambda x: self.download_and_save_audio(x), song_list))

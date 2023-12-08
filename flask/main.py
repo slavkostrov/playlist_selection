@@ -148,6 +148,7 @@ def _create_playlist(
     return sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
 
 
+# TODO: create and use API endpoint like /api/generate/{query_song_ids}
 @app.post("/generate")
 async def generate_playlist(request: Request, selected_songs_json: Annotated[str, Form()]):
     """Generate playlists from user request."""

@@ -18,7 +18,7 @@ from spotipy.oauth2 import SpotifyOAuth
 logger = logging.getLogger()
 
 # TODO: correct setup
-redis_db = redis.Redis(host='localhost', port=6379, db=0)
+redis_db = redis.Redis(host=os.environ["REDIS_HOST"], port=os.environ["REDIS_PORT"], db=0)
 
 app = FastAPI(debug=True)
 templates = Jinja2Templates(directory="templates")

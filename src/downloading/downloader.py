@@ -31,7 +31,7 @@ class BaseDownloader(ABC):
          raise NotImplementedError()
     
     @abstractmethod
-    def download_single_audio(self, output_path: str, **kwargs) -> tp.NoReturn: # TODO: download_audio_to_s3?
+    def download_single_audio(self, output_path: str, **kwargs) -> tp.NoReturn:
         """Download audio and put it into specific filesystem."""
         raise NotImplementedError()
 
@@ -121,13 +121,13 @@ class YouTubeDownloader(BaseDownloader):
         self._audio_dumper = audio_dumper
 
 
-    def search_track_audio(self, song_list: list) -> YouTube:
+    def search_track_audio(self, song: Song | tuple) -> YouTube:
         """Search and return video metadata for mp3 download.
         
-        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
+        :param song Song | tp.Tuple: tuple, like (artist_name, song_name)
         :return YouTube: class with YouTube song metadata
         """
-        youtube_video = Search(f"{song_list[0]} by {song_list[1]}").results[0]
+        youtube_video = Search(f"{song.name} by {song.artist}").results[0]
         yt_video_metadata = youtube_video.streams.filter(only_audio=True).first()
 
         return yt_video_metadata
@@ -136,7 +136,7 @@ class YouTubeDownloader(BaseDownloader):
     def download_single_audio(self, song: Song | tuple, temp_dir: str = None) -> None:
         """Download single audio to local fs.
 
-        :param song_list Song | tp.Tuple: Song or tuples, like (artist_name, song_name)
+        :param song Song | tp.Tuple: Song or tuple, like (artist_name, song_name)
         :param temp_dir: str | None: local directory for downloading
         :return None
         """
@@ -144,16 +144,16 @@ class YouTubeDownloader(BaseDownloader):
         if temp_dir is None:
             temp_dir = "."
 
-        self.yt_video_metadata = self.search_track_audio(song_list=song)
+        self.yt_video_metadata = self.search_track_audio(song=song)
         result_path = f"{temp_dir}/{song.name}-{song.artist}.mp3"
         LOGGER.info("Download mp3 to %s.", result_path)
         self.yt_video_metadata.download(filename=result_path)
         return result_path
 
-    def download_and_save_audio(self, song: tuple | list) -> None:
+    def download_and_save_audio(self, song: Song | tuple) -> None:
         """Downloading mp3 audio to local temp and then to s3.
 
-        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
+        :param song Song | Tuple: song or tuple, like (artist_name, song_name)
         :return None
         """
         song = _fix_song(song)
@@ -162,7 +162,7 @@ class YouTubeDownloader(BaseDownloader):
             self._audio_dumper.dump_audio(song=song, file_path=result_path)
 
 
-    def download_audios(self, song_list: list, max_workers_num: int = 9) -> None:
+    def download_audios(self, song_list: list[Song | tuple], max_workers_num: int = 9) -> None:
         """Feature for downloading tracks by artist name and song title and then uploading to s3 immediately.
 
         :param song_list tp.List: List of tuples, like (artist_name, song_name)
@@ -171,5 +171,5 @@ class YouTubeDownloader(BaseDownloader):
         """
         song_list = [_fix_song(song) for song in song_list]
         LOGGER.info("start multiprocess audio downloading")
-        with ThreadPoolExecutor(max_workers_num) as executor:
+        with ThreadPoolExecutor(min(max_workers_num, len(song_list))) as executor:
             list(executor.map(lambda x: self.download_and_save_audio(x), song_list))

@@ -14,10 +14,11 @@ DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
 class SpotifyAuthCookie:
     """Need cookie dependecy."""
     
-    def __call__(self, request: Request):  # noqa: D102
+    def __call__(self, request: Request) -> str:  # noqa: D102
         user_token_cookie = request.cookies.get(DEFAULT_USER_TOKEN_COOKIE)
         if user_token_cookie is None:
             raise UnknownCookieException
+        return user_token_cookie
 
 
 class SpotifyAuth:

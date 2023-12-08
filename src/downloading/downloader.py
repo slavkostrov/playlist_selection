@@ -8,14 +8,15 @@ import contextlib
 import typing as tp
 import logging
 import logging.config
+from collections import namedtuple
 from abc import ABC, abstractmethod
-from functools import partial
 
 from concurrent.futures import ThreadPoolExecutor
 
 from pytube import YouTube
 from pytube import Search
 
+Song = namedtuple("Song", ["name", "artist"])
 
 LOGGER = logging.getLogger("downloader_logger")
 with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
@@ -30,10 +31,67 @@ class BaseDownloader(ABC):
          raise NotImplementedError()
     
     @abstractmethod
-    def download_single_audio(self, output_path: str, **kwargs) -> tp.NoReturn: # TODO: download_audio_to_s3?
+    def download_single_audio(self, output_path: str, **kwargs) -> tp.NoReturn:
         """Download audio and put it into specific filesystem."""
         raise NotImplementedError()
 
+
+class BaseAudioDumper(ABC):
+    """Base dumper for audio."""
+    
+    @abstractmethod
+    def dump_audio(self, song: Song, file_path: str):
+        """Save song from file_path."""
+        pass
+
+    @staticmethod
+    def get_relative_path(song: Song) -> str:
+        """Return relative path to file for save."""
+        folder = f"{song.name}-{song.artist}"
+        folder = folder.replace(" ", "_")
+        path = f"{folder}/audio.mp3"
+        return path
+
+
+class S3AudioDumper(BaseAudioDumper):
+    """S3 dumper for audio."""
+    
+    def __init__(
+        self,
+        schema: str,
+        host: str,
+        bucket_name: str,
+        prefix: str,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
+    ):
+        """Constructor for S3 dumper.
+        
+        :param schema str: s3 schema name
+        :param host str: s3 host name
+        :param bucket_name str: s3 bucket name
+        :param prefix str: save prefix on s3 bucket
+        :param aws_access_key_id str | None: aws s3 access key id (statical)
+        :param aws_secret_access_key str | None: aws s3 secret key (statical)
+        """
+        self.bucket_name = bucket_name
+        self._s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            endpoint_url=f"{schema}://{host}",
+        )
+        
+    def dump_audio(self, song: Song, file_path: str):
+        """Save song from file_path."""
+        save_path = self.get_relative_path(song)
+        LOGGER.info("Dump file to S3 with key '%s'.", save_path)
+        self._s3_client.upload_file(
+            Filename=file_path,
+            Bucket=self.bucket_name,
+            Key=save_path,
+        )
+        
 
 @contextlib.contextmanager
 def make_temp_directory():
@@ -45,149 +103,73 @@ def make_temp_directory():
         shutil.rmtree(temp_dir)
 
 
+def _fix_song(song: Song | tuple):
+    if not isinstance(song, Song):
+        if len(song) == 2:
+            song = Song(song[1], song[0])
+        else:
+            raise ValueError(f"Incorrect song format - {song}.")
+    return song
+
 class YouTubeDownloader(BaseDownloader):
     """YouTube mp3 downloader class."""
+    
+    def __init__(self, audio_dumper: BaseAudioDumper):
+        """Constructor of Downloader."""
+        if not isinstance(audio_dumper, BaseAudioDumper):
+            raise TypeError(f"Invalid value of audio dumper with type {type(audio_dumper)}.")
+        self._audio_dumper = audio_dumper
 
-    def search_track_audio(self, song_list: list) -> YouTube:
+
+    def search_track_audio(self, song: Song | tuple) -> YouTube:
         """Search and return video metadata for mp3 download.
         
-        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
-
+        :param song Song | tp.Tuple: tuple, like (artist_name, song_name)
         :return YouTube: class with YouTube song metadata
         """
-        youtube_video = Search(f"{song_list[0]} by {song_list[1]}").results[0]
+        youtube_video = Search(f"{song.name} by {song.artist}").results[0]
         yt_video_metadata = youtube_video.streams.filter(only_audio=True).first()
 
         return yt_video_metadata
 
 
-    def download_single_audio(
-        self, 
-        song_list: list | tuple, 
-        temp_dir: str = None
-    ) -> None:
+    def download_single_audio(self, song: Song | tuple, temp_dir: str = None) -> None:
         """Download single audio to local fs.
 
-        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
+        :param song Song | tp.Tuple: Song or tuple, like (artist_name, song_name)
         :param temp_dir: str | None: local directory for downloading
         :return None
         """
-        LOGGER.info("search for track audio")
-        self.yt_video_metadata = self.search_track_audio(song_list=song_list)
-        LOGGER.info("Download mp3 from YouTube")
-        self.yt_video_metadata.download(filename=f"{temp_dir}/{song_list[0]}-{song_list[1]}.mp3")
+        song = _fix_song(song)
+        if temp_dir is None:
+            temp_dir = "."
 
+        self.yt_video_metadata = self.search_track_audio(song=song)
+        result_path = f"{temp_dir}/{song.name}-{song.artist}.mp3"
+        LOGGER.info("Download mp3 to %s.", result_path)
+        self.yt_video_metadata.download(filename=result_path)
+        return result_path
 
-    def save_to_s3(
-        self,
-        song_list: list | tuple,
-        schema: str,
-        host: str,
-        bucket_name: str,
-        prefix: str,
-        aws_access_key_id: str | None = None,
-        aws_secret_access_key: str | None = None,
-        temp_dir: str | None = None,
-    ) -> str:
-        """Save audio file to s3.
-
-        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
-        :param schema str: s3 schema name
-        :param host str: s3 host name
-        :param bucket_name str: s3 bucket name
-        :param prefix str: save prefix on s3 bucket
-        :param aws_access_key_id str | None: aws s3 access key id (statical)
-        :param aws_secret_access_key str | None: aws s3 secret key (statical)
-        :param temp_dir: str | None: local directory for downloading
-
-        :return str: s3 path to uploaded song
-        """
-        aws_access_key_id = aws_access_key_id or self._aws_access_key_id
-        aws_secret_access_key = aws_secret_access_key or self._aws_secret_access_key
-
-        LOGGER.info("making s3 client")
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            endpoint_url=f"{schema}://{host}",
-        )
-        folder_name = (song_list[0] + song_list[1]).replace(" ", "_")
-        filename_path = f"{prefix}/{folder_name}/audio.mp3"
-        obj_body = f"{temp_dir}/{song_list[0]}-{song_list[1]}.mp3"
-        LOGGER.info("S3 uploading to %s.", filename_path)
-        s3_client.upload_file(Filename=obj_body, Bucket=bucket_name, Key=filename_path)
-
-        return f"{schema}://{host}/{bucket_name}"
-
-
-    def download_and_save_audio(
-        self,
-        song_list: tuple | list, 
-        schema: str,
-        host: str,
-        bucket_name: str,
-        prefix: str,
-        aws_access_key_id: str | None = None,
-        aws_secret_access_key: str | None = None, 
-    ) -> None:
+    def download_and_save_audio(self, song: Song | tuple) -> None:
         """Downloading mp3 audio to local temp and then to s3.
 
-        :param song_list tp.List | tp.Tuple: lists or tuples, like (artist_name, song_name)
-        :param schema str: s3 schema name
-        :param host str: s3 host name
-        :param bucket_name str: s3 bucket name
-        :param aws_access_key_id str | None: aws s3 access key id (statical)
-        :param aws_secret_access_key str | None: aws s3 secret key (statical)
-
+        :param song Song | Tuple: song or tuple, like (artist_name, song_name)
         :return None
         """
+        song = _fix_song(song)
         with make_temp_directory() as temp_dir:
-            LOGGER.info("downloading to temp")
-            self.download_single_audio(song_list=song_list, temp_dir=temp_dir)
-            LOGGER.info("downloading to s3")
-            self.save_to_s3(
-                song_list=song_list, 
-                schema=schema, 
-                host=host, 
-                bucket_name=bucket_name, 
-                aws_access_key_id=aws_access_key_id, 
-                aws_secret_access_key=aws_secret_access_key, 
-                temp_dir=temp_dir,
-                prefix=prefix,
-            )
+            result_path = self.download_single_audio(song=song, temp_dir=temp_dir)
+            self._audio_dumper.dump_audio(song=song, file_path=result_path)
 
 
-    def download_audios(
-        self, 
-        song_list: list, 
-        schema: str,
-        host: str,
-        bucket_name: str,
-        aws_access_key_id: str | None = None,
-        aws_secret_access_key: str | None = None,
-        max_workers_num: int = 9,
-    ) -> None:
+    def download_audios(self, song_list: list[Song | tuple], max_workers_num: int = 9) -> None:
         """Feature for downloading tracks by artist name and song title and then uploading to s3 immediately.
 
         :param song_list tp.List: List of tuples, like (artist_name, song_name)
-        :param schema str: s3 schema name
-        :param host str: s3 host name
-        :param bucket_name str: s3 bucket name
-        :param aws_access_key_id str | None: aws s3 access key id (statical)
-        :param aws_secret_access_key str | None: aws s3 secret key (statical)
         :param max_workers_num int: number of workers for ThreadPoolExecutor
-
         :return None
         """
-        executor_fn = partial(
-            self.download_and_save_audio,
-            schema=schema,
-            host=host,
-            bucket_name=bucket_name,
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-        )
+        song_list = [_fix_song(song) for song in song_list]
         LOGGER.info("start multiprocess audio downloading")
-        with ThreadPoolExecutor(max_workers_num) as executor:
-            list(executor.map(lambda x: executor_fn(x), song_list))
+        with ThreadPoolExecutor(min(max_workers_num, len(song_list))) as executor:
+            list(executor.map(lambda x: self.download_and_save_audio(x), song_list))

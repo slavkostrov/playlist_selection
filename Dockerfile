@@ -10,11 +10,11 @@ RUN poetry install --no-root --without dev,test
 WORKDIR /app
 COPY /src /src
 
-EXPOSE 8000
+EXPOSE 5000
 
 ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
 
 # for fast rebuild
 COPY /app /app
-CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]

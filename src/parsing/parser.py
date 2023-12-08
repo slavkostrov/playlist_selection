@@ -3,7 +3,6 @@ import functools
 import logging
 import logging.config
 import typing as tp
-import yaml
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -11,10 +10,9 @@ from datetime import datetime, timedelta
 import boto3
 import numpy as np
 import spotipy as sp
+import yaml
 from spotipy.oauth2 import SpotifyClientCredentials
-
-from tracks.meta import TrackMeta, TrackDetails
-
+from tracks.meta import TrackDetails, TrackMeta
 
 LOGGER = logging.getLogger("parser_logger")
 with open("parsing/logging_config.yml") as fin:

@@ -2,19 +2,18 @@
 import json
 import logging
 import os
-from typing import Annotated
 import uuid
+from typing import Annotated
 
 import redis
 import spotipy
+from dependency import DEFAULT_USER_TOKEN_COOKIE, SpotifyAuth, SpotifyAuthCookie
+from exceptions import RequiresLoginException, UnknownCookieException
 from fastapi import Depends, FastAPI, Form, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from spotipy.oauth2 import SpotifyOAuth
-
-from dependency import SpotifyAuth, DEFAULT_USER_TOKEN_COOKIE, SpotifyAuthCookie
-from exceptions import RequiresLoginException, UnknownCookieException
 
 logger = logging.getLogger()
 

@@ -1,8 +1,9 @@
 """Module with downloaders implementation."""
 import typing as tp
-
 from abc import ABC, abstractmethod
+
 from ..tracks import TrackMeta
+
 
 class BaseDownloader(ABC):
     """Base downloader class."""

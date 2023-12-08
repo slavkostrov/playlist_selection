@@ -42,6 +42,7 @@ extend-select = [
   "E501",
   "UP",  # pyupgrade
   "D",   # pydocstyle
+  "I",   # isort
 ]
 extend-include = ["*.ipynb"]
 extend-exclude = ["tests", "notebooks/api_description.ipynb"]

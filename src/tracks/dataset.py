@@ -1,9 +1,9 @@
 """Module with dataset implementation."""
 import typing as tp
-
 from abc import ABC, abstractmethod
 
 from .audio import Track
+
 
 class BaseDataset(ABC):
     """Base class for all dataset classes."""

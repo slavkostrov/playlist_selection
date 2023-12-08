@@ -2,13 +2,11 @@
 
 import os
 
+from exceptions import UnknownCookieException
 from fastapi import Request
 from redis import Redis
-
 from spotipy.cache_handler import RedisCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
-
-from exceptions import UnknownCookieException
 
 DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
 

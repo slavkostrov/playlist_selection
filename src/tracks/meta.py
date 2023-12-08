@@ -3,7 +3,6 @@ import json
 
 from pydantic import BaseModel, Field
 
-
 S3_SAVE_PREFIX = "tracks" # Директория на s3 куда сохраняем мету
 
 

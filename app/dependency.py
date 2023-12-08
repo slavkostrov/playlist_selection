@@ -23,14 +23,13 @@ class SpotifyAuthCookie:
 class SpotifyAuth:
     """Dependency from authorization in Spotify."""
     
-    def __init__(self, redis_db: Redis, create_cookie: bool = False):  # noqa: D417
+    def __init__(self, redis_db: Redis):  # noqa: D417
         """Contstructor of dependency.
         
         Keyword Arguments:
         redis_db -- Redis object of cached tokens database.
         """
         self._redis_db = redis_db
-        self._create_cookie = create_cookie
 
     def __call__(self, request: Request) -> SpotifyOAuth:  # noqa: D417
         """Call method of dependency.

@@ -25,10 +25,15 @@ class SpotifyAuth:
         redirect_uri: str,
         scope: str,
     ):  # noqa: D417
-        """Contstructor of dependency.
+        """Contstructor of auth.
         
         Keyword Arguments:
-        token_key -- user's token for spotify key in redis.
+        redis_db -- redis db object for token storage.
+        client_id -- token key for user private token (user's uuid from cookie).
+        token_key -- client id of spotify app.
+        client_secret -- client secret of spotify app.
+        redirect_uri -- url to redirect after login with OAuth.
+        scope -- scope for spotify app.
         """
         self._redis_db = redis_db
         self._token_key = token_key

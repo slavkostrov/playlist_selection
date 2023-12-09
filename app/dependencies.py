@@ -29,7 +29,11 @@ class SpotifyAuthDependency:
         """Contstructor of dependency.
         
         Keyword Arguments:
-        token_key -- user's token for spotify key in redis.
+        redis_db -- redis db object for token storage.
+        client_id -- client id of spotify app.
+        client_secret -- client secret of spotify app.
+        redirect_uri -- url to redirect after login with OAuth.
+        scope -- scope for spotify app.
         """
         self._redis_db = redis_db
         self._client_id = client_id

@@ -32,8 +32,8 @@ class SpotifyAuth:
         
         Keyword Arguments:
         redis_db -- redis db object for token storage.
-        client_id -- token key for user private token (user's uuid from cookie).
-        token_key -- client id of spotify app.
+        token_key -- token key for user private token (user's uuid from cookie).
+        client_id -- client id of spotify app.
         client_secret -- client secret of spotify app.
         redirect_uri -- url to redirect after login with OAuth.
         scope -- scope for spotify app.

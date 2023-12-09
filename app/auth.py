@@ -14,7 +14,10 @@ logger.setLevel(logging.INFO)
 
 
 class SpotifyAuth:
-    """Wrapper of authorization in Spotify."""
+    """Wrapper of authorization in Spotify.
+    
+    Used for identify current user.
+    """
 
     def __init__(  # noqa: D417
         self,

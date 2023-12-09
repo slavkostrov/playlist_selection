@@ -1,38 +1,48 @@
 """Baseline implementation of playlist selection web app."""
 import json
 import logging
+import logging.config
 import os
 import uuid
 from typing import Annotated
 
+import redis
 import spotipy
-from dependency import DEFAULT_USER_TOKEN_COOKIE, SpotifyAuth, SpotifyAuthCookie
+from auth import SpotifyAuth
+from dependencies import DEFAULT_USER_TOKEN_COOKIE, AuthCookieDependency, SpotifyAuthDependency
 from exceptions import RequiresLoginException, UnknownCookieException
 from fastapi import Depends, FastAPI, Form, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-logger = logging.getLogger()
+# TODO: setup logging format etc
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-# TODO: correct setup
-# redis_db = redis.Redis(
-#     host=os.environ["REDIS_HOST"],
-#     port=os.environ["REDIS_PORT"],
-#     db=0,
-# )
+redis_db = redis.Redis(
+    host=os.environ["REDIS_HOST"],
+    port=os.environ["REDIS_PORT"],
+    db=0,
+)
 
-# Got error with `partial(SpotifyAuth, redis_db=redis_db)`
-# DependsOnAuth = Annotated[SpotifyAuth, Depends(partial(SpotifyAuth, redis_db=redis_db))]
-DependsOnAuth = Annotated[SpotifyAuth, Depends(SpotifyAuth)]
-DependsOnCookie = Annotated[str | None, Depends(SpotifyAuthCookie())]
+# TODO: validate app args (host/port/tokens), maybe without environ usage
+auth_dependency = SpotifyAuthDependency(
+    redis_db=redis_db,
+    client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
+    client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
+    redirect_uri=os.environ["PLAYLIST_SELECTION_CALLBACK_URL"],
+    scope="user-library-read playlist-modify-private playlist-read-private",
+)
+
+DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
+DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
 
 app = FastAPI(debug=True)
 templates = Jinja2Templates(directory="templates")
 app.secret_key = os.urandom(64)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# TODO: validate app args (host/port/tokens), maybe without environ usage
 
 @app.exception_handler(RequiresLoginException)
 async def requires_login_exception_handler(request: Request, exc: RequiresLoginException) -> Response:

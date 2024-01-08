@@ -1,14 +1,22 @@
 """Module """
 import numpy as np
 import pandas as pd
+import datetime
+import boto3
+import joblib
+import contextlib
+import shutil
+import tempfile
+
 from abc import ABC, abstractmethod
 from pandas.core.api import DataFrame as DataFrame
+from typing import List
 
 from sklearn.base import BaseEstimator
 from sklearn.compose import ColumnTransformer, make_column_transformer, make_column_selector
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, FunctionTransformer
+from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import PCA
 
@@ -17,8 +25,18 @@ DROP_COLUMNS = [
     "audio_path",
     "album_id",
     "artist_id",
-    "track_id"
+    # "track_id"
 ]
+
+
+@contextlib.contextmanager
+def make_temp_directory():
+    """Context manager for creating temp directories."""
+    temp_dir = tempfile.mkdtemp()
+    try:
+        yield temp_dir
+    finally:
+        shutil.rmtree(temp_dir)
 
 
 class BaseModel(ABC):
@@ -43,12 +61,13 @@ class KnnModel(BaseModel):
         self,
         k_neighbors: int = 4,
         metric: str = "manhattan", 
-        n_components: int = 141, 
+        n_components: int = 141,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
     ):
         """
         Initialize model.
 
-        :param pd.Dataframe dataset: meta dataset from S3Dataset
         :param int k_neighbors: number of neighbors to predict
         :param str metric: distance metric that KNN optimize 
         :param int n_components: number of components for PCA decomposition
@@ -58,6 +77,8 @@ class KnnModel(BaseModel):
         self.k_neighbors = k_neighbors
         self.metric = metric
         self.n_components = n_components
+        self.aws_access_key_id = aws_access_key_id
+        self.aws_secret_access_key = aws_secret_access_key
 
 
     def prettify(self, dataset) -> DataFrame:
@@ -67,6 +88,8 @@ class KnnModel(BaseModel):
         Useful only for meta dataset from S3Dataset.
         """
         dataset = dataset.drop(columns=DROP_COLUMNS).dropna(subset="track_name")
+        dataset.set_index("track_id", inplace=True)
+
         if dataset["genres"].dtype == "object":
             dataset["genres"] = dataset["genres"].apply(eval)
         if dataset["artist_name"].dtype == "object":
@@ -83,7 +106,7 @@ class KnnModel(BaseModel):
         return dataset[model_columns]
 
 
-    def get_preprocessor(self, model_dataset) -> ColumnTransformer:
+    def get_preprocessor(self) -> ColumnTransformer:
         """
         Preproccess features.
 
@@ -94,7 +117,7 @@ class KnnModel(BaseModel):
         numeric_transformer = make_pipeline(SimpleImputer(), StandardScaler())
         
         preprocessor = make_column_transformer(
-            (numeric_transformer, 
+            (numeric_transformer,
              make_column_selector(dtype_include=np.number)),
             (categorical_transformer, 
              make_column_selector(dtype_include=object))
@@ -111,22 +134,167 @@ class KnnModel(BaseModel):
         return decomposer
     
 
-    def open(self, dataset) -> BaseEstimator:
+    def get_pipeline(self) -> Pipeline:
         """
-        Trains and opens KNN model.
-        """
-        self.preprocessor = self.get_preprocessor(self.prettify(dataset))
-        self.preprocessor.fit(self.prettify(dataset))
-        preprocessed_dataset = self.preprocessor.transform(self.prettify(dataset))
-        
-        self.decomposer = self.get_decomposer().fit(preprocessed_dataset)
-        pca_dataset = self.decomposer.transform(preprocessed_dataset)
+        Union all preprocessing methods in one.
 
-        self.model = NearestNeighbors(
-            n_neighbors=self.k_neighbors, 
-            metric=self.metric
+        :return Pipeline model_pipeline: sklearn model pipeline 
+        """
+        stages = [
+            ("Prettify", FunctionTransformer(self.prettify)),
+            ("Preprocess", self.get_preprocessor()),
+            ("Decompose", self.get_decomposer()),
+            ("KNN", NearestNeighbors(n_neighbors=self.k_neighbors, metric=self.metric))
+        ]
+        model_pipeline = Pipeline(stages)
+
+        return model_pipeline
+
+
+    def train(self, dataset) -> Pipeline:
+        """
+        Trains KNN model.
+        
+        :param pd.Dataframe dataset: meta dataset from S3Dataset
+        
+        :return Pipeline model_pipeline: fitted sklearn model pipeline 
+        """
+        self.model_pipeline = self.get_pipeline().fit(dataset)
+        self.mapping = {
+            i:j for i, j in enumerate(self.prettify(dataset).index)
+        }
+
+        return self.model_pipeline
+
+
+    def dump(
+        self,
+        schema: str,
+        host: str,
+        bucket_name: str,
+        model_name: str | None = None,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
+    ) -> None:
+        """
+        Dump model to S3.
+
+        :param str schema: s3 schema name
+        :param str host: s3 host name
+        :param str bucket_name: s3 bucket name
+        :param str model_name: model name with .pkl
+        :param str | None aws_access_key_id: aws s3 access key id (statical)
+        :param str | None aws_secret_access_key: aws s3 secret key (statical)
+
+        :return:
+        """
+        if not self.model_pipeline:
+            return ValueError("Train model before dumping.")
+
+        aws_access_key_id = aws_access_key_id or self._aws_access_key_id
+        aws_secret_access_key = aws_secret_access_key or self._aws_secret_access_key
+
+        file_name = model_name or f"KNN_pipeline_{datetime.date.today()}.pkl"
+
+        s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            endpoint_url=f"{schema}://{host}",
         )
 
-        self.model.fit(pca_dataset)
+        with make_temp_directory() as temp_dir:
+            joblib.dump(
+                value=self.model_pipeline, 
+                filename=f"{temp_dir}/{file_name}"
+            )
+            s3_client.upload_file(
+                Filename=f"{temp_dir}/{file_name}",
+                Bucket=bucket_name,
+                Key=f"models/{file_name}"
+            )
+            joblib.dump(
+                value=self.mapping, 
+                filename=f"{temp_dir}/mapping.json"
+            )
+            s3_client.upload_file(
+                Filename=f"{temp_dir}/mapping.json",
+                Bucket=bucket_name,
+                Key=f"models/mapping.json"
+            )
 
-        return self.model
+
+    def open(
+        self,
+        schema: str,
+        host: str,
+        bucket_name: str,
+        model_name: str | None = None,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
+    ) -> BaseEstimator: 
+        """
+        Open KNN model from S3.
+
+        :param schema str: s3 schema name
+        :param host str: s3 host name
+        :param bucket_name str: s3 bucket name
+        :param str model_name: model name with .pkl
+        :param aws_access_key_id str | None: aws s3 access key id (statical)
+        :param aws_secret_access_key str | None: aws s3 secret key (statical)
+
+        :return:
+        """
+        aws_access_key_id = aws_access_key_id or self._aws_access_key_id
+        aws_secret_access_key = aws_secret_access_key or self._aws_secret_access_key
+
+        file_name = model_name
+        # or f"KNN_pipeline_{datetime.date.today()}.pkl"
+
+        s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            endpoint_url=f"{schema}://{host}",
+        )
+
+        with make_temp_directory() as temp_dir:
+            s3_client.download_file(
+                Bucket=bucket_name,
+                Key=f"models/{file_name}",
+                Filename=f"{temp_dir}/{file_name}"
+            )
+            self.model_pipeline = joblib.load(
+                filename=f"{temp_dir}/{file_name}"
+            )
+            s3_client.download_file(
+                Bucket=bucket_name,
+                Key=f"models/mapping.json",
+                Filename=f"{temp_dir}/mapping.json"
+            )
+            self.mapping = joblib.load(
+                filename=f"{temp_dir}/mapping.json"
+            )
+
+        return self.model_pipeline
+    
+
+    def predict(self, dataset) -> List:
+        """
+        Predict neighbor tracks with KNN model.
+
+        :param pd.Dataframe dataset: S3Dataset
+
+        :return List neighbor_tracks: list of neighbor tracks
+        """
+
+        data = self.model_pipeline[:-1].transform(dataset)
+        # [:, 1:] - временная заглушка, так как пока что у нас будет тест на треках, 
+        # которые уже есть в датасете (если убрать, то первой будет возвращаться сама песня, которую передаем)
+        track_ids = self.model_pipeline[-1].kneighbors(data, return_distance=False)[:, 1:]
+        neighbor_tracks = list(map(lambda x: self.mapping[x], track_ids.flatten()))
+
+        return neighbor_tracks
+        
+
+    

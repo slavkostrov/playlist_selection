@@ -209,7 +209,7 @@ class KnnModel(BaseModel):
     def open(
         self,
         bucket_name: str,
-        model_name: str | None = None,
+        model_name: str,
         profile_name: str | None = "default"
     ) -> BaseEstimator: 
         """
@@ -221,7 +221,7 @@ class KnnModel(BaseModel):
 
         :return:
         """
-        model_name = model_name # or f"KNN_pipeline_{datetime.date.today()}.pkl" ? take latest
+        # model_name = model_name # or f"KNN_pipeline_{datetime.date.today()}.pkl" ? take latest
 
         s3_client = boto3.Session(profile_name=profile_name).client("s3")
 

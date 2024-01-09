@@ -122,12 +122,12 @@ class KnnModel(BaseModel):
         return preprocessor
     
 
-    def get_decomposer(self) -> PCA:
-        """
-        Decompose dataset.
-        """
-        decomposer = PCA(n_components=self.n_components).set_output(transform="pandas")
-        return decomposer
+    # def get_decomposer(self) -> PCA:
+    #     """
+    #     Decompose dataset.
+    #     """
+    #     decomposer = PCA(n_components=self.n_components).set_output(transform="pandas")
+    #     return decomposer
     
 
     def get_pipeline(self) -> Pipeline:
@@ -139,7 +139,7 @@ class KnnModel(BaseModel):
         stages = [
             ("Prettify", FunctionTransformer(self.prettify)),
             ("Preprocess", self.get_preprocessor()),
-            ("Decompose", self.get_decomposer()),
+            ("Decompose", PCA(n_components=self.n_components).set_output(transform="pandas")),
             ("KNN", NearestNeighbors(n_neighbors=self.k_neighbors, metric=self.metric))
         ]
         model_pipeline = Pipeline(stages)
@@ -157,7 +157,7 @@ class KnnModel(BaseModel):
         """
         self.model_pipeline = self.get_pipeline().fit(dataset)
         self.mapping = {
-            i:j for i, j in enumerate(self.prettify(dataset).index)
+            i: j for i, j in enumerate(self.prettify(dataset).index)
         }
 
         return self.model_pipeline
@@ -256,10 +256,11 @@ class KnnModel(BaseModel):
         """
 
         data = self.model_pipeline[:-1].transform(dataset)
-        # [:, 1:] - временная заглушка, так как пока что у нас будет тест на треках, 
-        # которые уже есть в датасете (если убрать, то первой будет возвращаться сама песня, которую передаем)
-        track_ids = self.model_pipeline[-1].kneighbors(data, return_distance=False)[:, 1:]
-        neighbor_tracks = list(map(lambda x: self.mapping[x], track_ids.flatten()))
+
+        prediction = self.model_pipeline[-1].kneighbors(data, return_distance=True)
+        distance_tracks = [list(x) for x in zip(prediction[0].flatten(), prediction[1].flatten())]
+        track_ids = [x[1] for x in list(filter(lambda c: c[0] > 1.e-9, distance_tracks))]
+        neighbor_tracks = list(map(lambda x: self.mapping[x], np.array(track_ids).flatten()))
 
         return neighbor_tracks
         

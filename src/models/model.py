@@ -165,18 +165,16 @@ class KnnModel(BaseModel):
 
     def dump(
         self,
-        schema: str,
-        host: str,
         bucket_name: str,
-        model_name: str | None = None
+        model_name: str | None = None,
+        profile_name: str | None = "default"
     ) -> None:
         """
         Dump model to S3.
 
-        :param str schema: s3 schema name
-        :param str host: s3 host name
         :param str bucket_name: s3 bucket name
         :param str model_name: model name
+        :param str profile_name: aws profile
 
         :return:
         """
@@ -185,9 +183,7 @@ class KnnModel(BaseModel):
 
         model_name = model_name or f"knn_pipeline_{datetime.date.today()}"
 
-        s3_client = boto3.Session(profile_name='default').client(
-            "s3", endpoint_url=f"{schema}://{host}",
-        )
+        s3_client = boto3.Session(profile_name=profile_name).client("s3")
 
         with make_temp_directory() as temp_dir:
             joblib.dump(
@@ -212,27 +208,22 @@ class KnnModel(BaseModel):
 
     def open(
         self,
-        schema: str,
-        host: str,
         bucket_name: str,
-        model_name: str | None = None
+        model_name: str | None = None,
+        profile_name: str | None = "default"
     ) -> BaseEstimator: 
         """
         Open KNN model from S3.
 
-        :param schema str: s3 schema name
-        :param host str: s3 host name
         :param bucket_name str: s3 bucket name
-        :param str model_name: model name with .pkl
+        :param str model_name: model name
+        :param str profile_name: aws profile
 
         :return:
         """
         model_name = model_name # or f"KNN_pipeline_{datetime.date.today()}.pkl" ? take latest
 
-        s3_client = boto3.Session(profile_name='default').client(
-            "s3",
-            endpoint_url=f"{schema}://{host}",
-        )
+        s3_client = boto3.Session(profile_name=profile_name).client("s3")
 
         with make_temp_directory() as temp_dir:
             s3_client.download_file(

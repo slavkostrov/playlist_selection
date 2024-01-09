@@ -122,14 +122,6 @@ class KnnModel(BaseModel):
         return preprocessor
     
 
-    # def get_decomposer(self) -> PCA:
-    #     """
-    #     Decompose dataset.
-    #     """
-    #     decomposer = PCA(n_components=self.n_components).set_output(transform="pandas")
-    #     return decomposer
-    
-
     def get_pipeline(self) -> Pipeline:
         """
         Union all preprocessing methods in one.

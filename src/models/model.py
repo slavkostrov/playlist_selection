@@ -62,8 +62,6 @@ class KnnModel(BaseModel):
         k_neighbors: int = 4,
         metric: str = "manhattan", 
         n_components: int = 141,
-        aws_access_key_id: str | None = None,
-        aws_secret_access_key: str | None = None,
     ):
         """
         Initialize model.
@@ -77,8 +75,6 @@ class KnnModel(BaseModel):
         self.k_neighbors = k_neighbors
         self.metric = metric
         self.n_components = n_components
-        self.aws_access_key_id = aws_access_key_id
-        self.aws_secret_access_key = aws_secret_access_key
 
 
     def prettify(self, dataset) -> DataFrame:
@@ -172,9 +168,7 @@ class KnnModel(BaseModel):
         schema: str,
         host: str,
         bucket_name: str,
-        model_name: str | None = None,
-        aws_access_key_id: str | None = None,
-        aws_secret_access_key: str | None = None,
+        model_name: str | None = None
     ) -> None:
         """
         Dump model to S3.
@@ -182,45 +176,37 @@ class KnnModel(BaseModel):
         :param str schema: s3 schema name
         :param str host: s3 host name
         :param str bucket_name: s3 bucket name
-        :param str model_name: model name with .pkl
-        :param str | None aws_access_key_id: aws s3 access key id (statical)
-        :param str | None aws_secret_access_key: aws s3 secret key (statical)
+        :param str model_name: model name
 
         :return:
         """
         if not self.model_pipeline:
             return ValueError("Train model before dumping.")
 
-        aws_access_key_id = aws_access_key_id or self._aws_access_key_id
-        aws_secret_access_key = aws_secret_access_key or self._aws_secret_access_key
+        model_name = model_name or f"knn_pipeline_{datetime.date.today()}"
 
-        file_name = model_name or f"KNN_pipeline_{datetime.date.today()}.pkl"
-
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
-            endpoint_url=f"{schema}://{host}",
+        s3_client = boto3.Session(profile_name='default').client(
+            "s3", endpoint_url=f"{schema}://{host}",
         )
 
         with make_temp_directory() as temp_dir:
             joblib.dump(
                 value=self.model_pipeline, 
-                filename=f"{temp_dir}/{file_name}"
+                filename=f"{temp_dir}/{model_name}.pkl"
             )
             s3_client.upload_file(
-                Filename=f"{temp_dir}/{file_name}",
+                Filename=f"{temp_dir}/{model_name}.pkl",
                 Bucket=bucket_name,
-                Key=f"models/{file_name}"
+                Key=f"models/{model_name}/model_file.pkl"
             )
             joblib.dump(
                 value=self.mapping, 
-                filename=f"{temp_dir}/mapping.json"
+                filename=f"{temp_dir}/mapping_file.pkl"
             )
             s3_client.upload_file(
-                Filename=f"{temp_dir}/mapping.json",
+                Filename=f"{temp_dir}/mapping_file.pkl",
                 Bucket=bucket_name,
-                Key=f"models/mapping.json"
+                Key=f"models/{model_name}/mapping_file.pkl"
             )
 
 
@@ -229,9 +215,7 @@ class KnnModel(BaseModel):
         schema: str,
         host: str,
         bucket_name: str,
-        model_name: str | None = None,
-        aws_access_key_id: str | None = None,
-        aws_secret_access_key: str | None = None,
+        model_name: str | None = None
     ) -> BaseEstimator: 
         """
         Open KNN model from S3.
@@ -240,40 +224,32 @@ class KnnModel(BaseModel):
         :param host str: s3 host name
         :param bucket_name str: s3 bucket name
         :param str model_name: model name with .pkl
-        :param aws_access_key_id str | None: aws s3 access key id (statical)
-        :param aws_secret_access_key str | None: aws s3 secret key (statical)
 
         :return:
         """
-        aws_access_key_id = aws_access_key_id or self._aws_access_key_id
-        aws_secret_access_key = aws_secret_access_key or self._aws_secret_access_key
+        model_name = model_name # or f"KNN_pipeline_{datetime.date.today()}.pkl" ? take latest
 
-        file_name = model_name
-        # or f"KNN_pipeline_{datetime.date.today()}.pkl"
-
-        s3_client = boto3.client(
+        s3_client = boto3.Session(profile_name='default').client(
             "s3",
-            aws_access_key_id=aws_access_key_id,
-            aws_secret_access_key=aws_secret_access_key,
             endpoint_url=f"{schema}://{host}",
         )
 
         with make_temp_directory() as temp_dir:
             s3_client.download_file(
                 Bucket=bucket_name,
-                Key=f"models/{file_name}",
-                Filename=f"{temp_dir}/{file_name}"
+                Key=f"models/{model_name}/model_file.pkl",
+                Filename=f"{temp_dir}/model_file.pkl"
             )
             self.model_pipeline = joblib.load(
-                filename=f"{temp_dir}/{file_name}"
+                filename=f"{temp_dir}/model_file.pkl"
             )
             s3_client.download_file(
                 Bucket=bucket_name,
-                Key=f"models/mapping.json",
-                Filename=f"{temp_dir}/mapping.json"
+                Key=f"models/{model_name}/mapping_file.pkl",
+                Filename=f"{temp_dir}/mapping_file.pkl"
             )
             self.mapping = joblib.load(
-                filename=f"{temp_dir}/mapping.json"
+                filename=f"{temp_dir}/mapping_file.pkl"
             )
 
         return self.model_pipeline

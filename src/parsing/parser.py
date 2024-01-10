@@ -3,19 +3,18 @@ import functools
 import logging
 import logging.config
 import typing as tp
-import yaml
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import boto3
 import numpy as np
 import spotipy as sp
+import yaml
+from spotipy.exceptions import SpotifyException
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from ..tracks.meta import TrackMeta, TrackDetails
-
-from pathlib import Path
-from spotipy.exceptions import SpotifyException
+from ..tracks.meta import TrackDetails, TrackMeta
 
 LOGGER = logging.getLogger("parser_logger")
 with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:

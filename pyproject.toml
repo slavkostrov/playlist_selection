@@ -19,6 +19,12 @@ pyyaml = "^6.0.1"
 pandas = "^2.1.2"
 pytube = "^15.0.0"
 loguru = "^0.7.2"
+flask = "^3.0.0"
+fastapi = "^0.104.1"
+uvicorn = "^0.24.0.post1"
+python-multipart = "^0.0.6"
+redis = "^5.0.1"
+isort = "^5.12.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.2"
@@ -45,6 +51,7 @@ extend-select = [
   "E501",
   "UP",  # pyupgrade
   "D",   # pydocstyle
+  "I",   # isort
 ]
 extend-include = ["*.ipynb"]
 extend-exclude = ["tests"]

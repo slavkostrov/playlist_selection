@@ -1,15 +1,15 @@
 """Module with dataset implementation."""
-from collections import defaultdict
 import itertools
 import logging
-from types import MappingProxyType
-import typing as tp
 import tempfile
-
+import typing as tp
 from abc import ABC, abstractmethod
-from tqdm.auto import tqdm
+from collections import defaultdict
+from types import MappingProxyType
+
 import botocore
 import pandas as pd
+from tqdm.auto import tqdm
 
 from . import TrackMeta
 from .audio import Track

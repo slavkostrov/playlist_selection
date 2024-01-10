@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if current_user %}
+        <h2>{{ current_user.get('display_name') }}, welcome to PlaylistSelection app!</h2>
+    {% else %}
+        <h2>Welcome to PlaylistSelection app, start with login!</h2>
+    {% endif %}
+    {% if songs %}
+        <p>Generate a Spotify playlist by selecting your favorite tracks.</p>
+        <h2>Select Songs:</h2>
+        <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
+            {% for song in songs %}
+                <input type="checkbox" id="song_{{ loop.index }}" name="selected_songs" value="{{ song.id }}">
+                <label for="song_{{ loop.index }}">{{ song.name }} - {{ song.artist }}</label><br>
+            {% endfor %}
+            <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
+            <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
+        </form>
+        <script>
+            function prepareSelectedSongs() {
+                const selectedSongs = [];
+                {% for song in songs %}
+                    if (document.getElementById("song_{{ loop.index }}").checked) {
+                        selectedSongs.push({
+                            track_id: "{{ song.track_id }}",
+                            name: "{{ song.name }}",
+                            artist: "{{ song.artist }}"
+                        });
+                    }
+                {% endfor %}
+                document.getElementById("selectedSongsJSON").value = JSON.stringify(selectedSongs);
+            }
+        </script>
+    {% endif %}
+    <!-- Other content for the home page -->
+{% endblock %}

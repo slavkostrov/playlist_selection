@@ -5,9 +5,9 @@ import pandas as pd
 
 
 def prepare_for_metric(
-        df: pd.DataFrame,
-        columns: list[str] | str,
-        neighbors_indexes: np.array,
+    df: pd.DataFrame,
+    columns: list[str] | str,
+    neighbors_indexes: np.array,
 ) -> tuple[np.array, np.array]:
     """Prepare data for metrics evaluation.
 

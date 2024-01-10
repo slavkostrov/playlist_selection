@@ -1,37 +1,70 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {% if current_user %}
-        <h2>{{ current_user.get('display_name') }}, welcome to PlaylistSelection app!</h2>
-    {% else %}
-        <h2>Welcome to PlaylistSelection app, start with login!</h2>
-    {% endif %}
-    {% if songs %}
-        <p>Generate a Spotify playlist by selecting your favorite tracks.</p>
-        <h2>Select Songs:</h2>
-        <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
-            {% for song in songs %}
-                <input type="checkbox" id="song_{{ loop.index }}" name="selected_songs" value="{{ song.id }}">
-                <label for="song_{{ loop.index }}">{{ song.name }} - {{ song.artist }}</label><br>
-            {% endfor %}
-            <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
-            <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
-        </form>
-        <script>
-            function prepareSelectedSongs() {
-                const selectedSongs = [];
+    <div class="greeting">
+        {% if current_user %}
+            <h2>{{ current_user.get('display_name') }}, welcome to PlaylistSelection app!</h2>
+        {% else %}
+            <h2>Welcome to PlaylistSelection app, start with login!</h2>
+        {% endif %}
+    </div>
+    <div class="generate">
+        <span class="blur"></span>
+        <span class="blur"></span>
+        {% if songs %}
+            <p>Generate a Spotify playlist by selecting your favorite tracks.</p>
+            <h2>Select Songs:</h2>
+            <div class="form">
+                <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
+                    <!-- TODO: Add search form -->
+                    <!-- <div class="search">
+                        TODO: Show list of selected songs
+                        <div class="selected-songs">
+                            <h2>Selected songs:</h2>
+                            <div class="selected-list">
+                                {% for song in songs %}
+                                    <input type="checkbox" id="song_{{ loop.index }}" class="custom-checkbox" name="selected_songs" value="{{ song.id }}">
+                                    <label for="song_{{ loop.index }}">{{ song.name }} - {{ song.artist }}</label><br>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="text" placeholder="Search song">
+                        <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
+                    </div> -->
+                    <div class="songs">
+                        {% for song in songs %}
+                            <input type="checkbox" id="song_{{ loop.index }}" class="custom-checkbox" name="selected_songs" value="{{ song.id }}">
+                            <label for="song_{{ loop.index }}">{{ song.name }} - {{ song.artist }}</label><br>
+                        {% endfor %}
+                        <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
+                        <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
+                    </div>
+                </form>
+            </div>
+            <!-- <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
                 {% for song in songs %}
-                    if (document.getElementById("song_{{ loop.index }}").checked) {
-                        selectedSongs.push({
-                            track_id: "{{ song.track_id }}",
-                            name: "{{ song.name }}",
-                            artist: "{{ song.artist }}"
-                        });
-                    }
+                    <input type="checkbox" id="song_{{ loop.index }}" name="selected_songs" value="{{ song.id }}">
+                    <label for="song_{{ loop.index }}">{{ song.name }} - {{ song.artist }}</label><br>
                 {% endfor %}
-                document.getElementById("selectedSongsJSON").value = JSON.stringify(selectedSongs);
-            }
-        </script>
-    {% endif %}
+                <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
+                <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
+            </form> -->
+            <script>
+                function prepareSelectedSongs() {
+                    const selectedSongs = [];
+                    {% for song in songs %}
+                        if (document.getElementById("song_{{ loop.index }}").checked) {
+                            selectedSongs.push({
+                                track_id: "{{ song.track_id }}",
+                                name: "{{ song.name }}",
+                                artist: "{{ song.artist }}"
+                            });
+                        }
+                    {% endfor %}
+                    document.getElementById("selectedSongsJSON").value = JSON.stringify(selectedSongs);
+                }
+            </script>
+        {% endif %}
+    </div>
     <!-- Other content for the home page -->
 {% endblock %}

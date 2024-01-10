@@ -1,7 +1,8 @@
 """Track meta info dataclass."""
 import json
+import re
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 S3_SAVE_PREFIX = "tracks" # Директория на s3 куда сохраняем мету
 
@@ -32,7 +33,7 @@ class TrackDetails(BaseModel):
     bars_mean_duration: float| None = Field(default=None)
     # beats
     beats_number: int | None = Field(default=None)
-    beats_mean_duration: float = Field(default=None)
+    beats_mean_duration: float | None = Field(default=None)
     # tatums
     tatums_number: int | None = Field(default=None)
     tatums_mean_duration: float | None = Field(default=None)
@@ -75,6 +76,15 @@ class TrackMeta(BaseModel):
     # TODO: Подумать как будем собирать жанры, в Spotify есть только для альбомов и очень не для всех
     genres: list[str] = Field(default_factory=lambda : ["unknown"], repr=True)
     track_details: TrackDetails = Field(default_factory=TrackDetails, repr=False)
+    
+    @validator("album_release_date", pre=True)
+    def _validate_date(cls, value):
+        if re.match(r'\d{4}-\d{2}-\d{2}', value):
+            return value
+        elif re.match(r'\d{4}', value):
+            return f"{value}-01-01"
+        else:
+            raise ValueError(f"Incorrect value in album_release_date: '{value}'.")
 
     @classmethod
     def load_from_json(cls, filename: str):
@@ -84,8 +94,8 @@ class TrackMeta(BaseModel):
         obj = cls(**params)
         return obj
     
-    @property
-    def s3_save_filename(self):
+    def get_s3_save_filename(self, prefix: str | None = None):
         """S3 save directory."""
-        genre_name = self.genres[0]
-        return f"{S3_SAVE_PREFIX}/{genre_name}/{self.artist_name[0]}-{self.track_name}"
+        prefix = prefix or S3_SAVE_PREFIX
+        folder_name = (self.track_name + self.artist_name[0]).replace(" ", "_")
+        return f"{prefix}/{folder_name}/meta"

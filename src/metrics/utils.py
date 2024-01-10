@@ -15,6 +15,9 @@ def prepare_for_metric(
         df: DataFrame to take data from
         columns: features to take from dataframe
         neighbors_indexes: indexes to take after model inference
+
+    Returns:
+        Tuple of (y_true, y_pred) objects in metric's format
     """
     y_true = df[columns].to_numpy()
     y_pred = np.take(y_true, neighbors_indexes, axis=0)

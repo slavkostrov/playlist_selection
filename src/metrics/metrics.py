@@ -223,14 +223,18 @@ class SoundParametersDiff(BasicMetric):
     
     @staticmethod
     def compute(y_true: Sequence[Sequence[float]], y_pred: Sequence[Sequence[Sequence[float]]]) -> float:
-        """Calculates mean l2 norm for sound parameters relative difference.
+        """Calculates share of correct predicted artists.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
+        Args:
+            y_true: true sound parameters
+            y_pred: predicted sound parameters (multiple for each input object)
+        
+        Returns:
+            L2 norm of sound parameters relative difference
         """
         def l2_norm(first, second):
-            diff = first - second
+            first, second = np.array(first), np.array(second)
+            diff = np.abs(first - second) / np.abs(np.maximum(first, second))
             return np.sqrt(np.square(diff).sum()).mean()
 
         sound_diff = [

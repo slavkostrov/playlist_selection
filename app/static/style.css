@@ -44,7 +44,7 @@ body {
 
 .login-section a {
     color: #fff;
-    background-color: #1d4ed8;
+    background-color: #387c4a;
     font-size: 1rem;
     text-decoration: none;
     padding: 8px 12px;
@@ -84,7 +84,7 @@ body {
 
 .blur {
     position: absolute;
-    box-shadow: 50px 130px 1000px 50px #1d4ed8;
+    box-shadow: 50px 130px 1000px 50px #387c4a;
     z-index: -100;
 }
 
@@ -142,7 +142,7 @@ body {
 
 .custom-checkbox:not(:disabled):not(:checked) + label:hover::before {
     border-color: #fff;
-    background-color: #1d4ed8;
+    background-color: #387c4a;
 }
 
 input[type=text]{
@@ -150,12 +150,12 @@ input[type=text]{
     color: #18181B;
     padding: 10px 10px;
     border-radius: 3px;
-    border: 1px solid #1d4ed8;
+    border: 1px solid #387c4a;
 }
 
 input[type=submit] {
     color: #fff;
-    background-color: #1d4ed8;
+    background-color: #387c4a;
     font-size: 12px;
     text-decoration: none;
     padding: 10px 12px;

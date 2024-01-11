@@ -33,6 +33,7 @@ auth_dependency = SpotifyAuthDependency(
     client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
     client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
     redirect_uri=os.environ["PLAYLIST_SELECTION_CALLBACK_URL"],
+    # TODO: check add playlist-read-collaborative
     scope="user-library-read playlist-modify-private playlist-read-private",
 )
 
@@ -143,7 +144,7 @@ def _create_playlist(
     )
     logger.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
     sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
-    return sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
+    return "Playlist added" # sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
 
 
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}

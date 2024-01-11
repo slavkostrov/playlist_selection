@@ -8,7 +8,7 @@ COPY pyproject.toml pyproject.toml
 RUN poetry install --no-root --without dev,test
 
 WORKDIR /app
-COPY /src /src
+COPY /playlist_selection /playlist_selection
 
 EXPOSE 5000
 

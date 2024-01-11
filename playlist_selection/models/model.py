@@ -84,8 +84,7 @@ class KnnModel(BaseModel):
         dataset.set_index("track_id", inplace=True)
 
         if dataset["genres"].dtype == "object":
-            if isinstance(dataset["ge
-                                  nres"].values.tolist()[0], str):
+            if isinstance(dataset["genres"].values.tolist()[0], str):
                 dataset["genres"] = dataset["genres"].apply(eval)
         if dataset["artist_name"].dtype == "object":
             if isinstance(dataset["artist_name"].values.tolist()[0], str):

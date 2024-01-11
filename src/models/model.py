@@ -59,7 +59,7 @@ class KnnModel(BaseModel):
 
     def __init__(
         self,
-        k_neighbors: int = 4,
+        k_neighbors: int = 3,
         metric: str = "manhattan", 
         n_components: int = 141,
     ):
@@ -132,7 +132,7 @@ class KnnModel(BaseModel):
             ("Prettify", FunctionTransformer(self.prettify)),
             ("Preprocess", self.get_preprocessor()),
             ("Decompose", PCA(n_components=self.n_components).set_output(transform="pandas")),
-            ("KNN", NearestNeighbors(n_neighbors=self.k_neighbors, metric=self.metric))
+            ("KNN", NearestNeighbors(n_neighbors=self.k_neighbors + 1, metric=self.metric))
         ]
         model_pipeline = Pipeline(stages)
 
@@ -251,8 +251,8 @@ class KnnModel(BaseModel):
 
         prediction = self.model_pipeline[-1].kneighbors(data, return_distance=True)
         distance_tracks = [list(x) for x in zip(prediction[0].flatten(), prediction[1].flatten())]
-        track_ids = [x[1] for x in list(filter(lambda c: c[0] > 1.e-9, distance_tracks))]
-        neighbor_tracks = list(map(lambda x: self.mapping[x], np.array(track_ids).flatten()))
+        track_ids = [x[1] for x in filter(lambda c: c[0] > 1.e-9, distance_tracks)]
+        neighbor_tracks = list(map(self.mapping.get, np.array(track_ids).flatten()))
 
         return neighbor_tracks
         

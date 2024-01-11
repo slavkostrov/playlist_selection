@@ -2,7 +2,7 @@
 requires-python = ">=3.10,<3.13"
 
 [tool.poetry]
-name = "project"
+name = "playlist-selection"
 version = "0.1.0"
 description = ""
 authors = ["Daniil Ganych <example@gmail.com>", "Nikita Saraev <saraevnik0909@gmail.com>", "Vyacheslav Kostrov <slavkostrov@gmail.com>"]

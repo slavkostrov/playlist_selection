@@ -79,13 +79,16 @@ class KnnModel(BaseModel):
 
         Useful only for meta dataset from S3Dataset.
         """
-        dataset = dataset.drop(columns=DROP_COLUMNS).dropna(subset="track_name")
+        drop_columns = list(set(dataset.columns) & set(DROP_COLUMNS))
+        dataset = dataset.drop(columns=drop_columns).dropna(subset="track_name")
         dataset.set_index("track_id", inplace=True)
 
         if dataset["genres"].dtype == "object":
-            dataset["genres"] = dataset["genres"].apply(eval)
+            if isinstance(dataset["genres"].values.tolist()[0], str):
+                dataset["genres"] = dataset["genres"].apply(eval)
         if dataset["artist_name"].dtype == "object":
-            dataset["artist_name"] = dataset["artist_name"].apply(eval).apply(set)
+            if isinstance(dataset["artist_name"].values.tolist()[0], str):
+                dataset["artist_name"] = dataset["artist_name"].apply(eval).apply(set)
         else:
             dataset["artist_name"] = dataset["artist_name"].apply(set)
 

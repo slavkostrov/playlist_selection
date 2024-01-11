@@ -1,4 +1,4 @@
 """Models package."""
-from .model import KnnModel
+from .model import BaseModel, KnnModel
 
-__all__ = ["KnnModel"]
+__all__ = ["BaseModel", "KnnModel"]

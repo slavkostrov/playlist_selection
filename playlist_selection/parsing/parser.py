@@ -9,7 +9,7 @@ from pathlib import Path
 
 import boto3
 import numpy as np
-import spotipy as sp
+import spotipy
 import yaml
 from spotipy.exceptions import SpotifyException
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -45,8 +45,9 @@ class SpotifyParser(BaseParser):
     
     def __init__(
         self,
-        client_id: str,
-        client_secret: str,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        sp: spotipy.Spotify | None = None,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
     ):
@@ -55,13 +56,19 @@ class SpotifyParser(BaseParser):
         :param str client_id: App ID
         :param str client_secret: App password
         :param str aws_access_key_id: AWS access key
+        :param Spotify sp: spotify instance
         :param str aws_secret_access_key: AWS secret key
 
         :return:
         """
-        self._auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
-        self._token_start_time = datetime.now()
-        self.sp = sp.Spotify(auth_manager=self._auth_manager)
+        if client_id and client_secret:
+            self._auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+            self._token_start_time = datetime.now()
+            self.sp = spotipy.Spotify(auth_manager=self._auth_manager)
+        elif sp:
+            self.sp = sp
+        else:
+            raise ValueError
 
         self._aws_access_key_id = aws_access_key_id
         self._aws_secret_access_key = aws_secret_access_key
@@ -71,9 +78,12 @@ class SpotifyParser(BaseParser):
 
         :return: 
         """
+        if not hasattr(self, "_token_start_time"):
+            return
+        
         if datetime.now() - self._token_start_time >= timedelta(minutes=SPOTIFY_TOKEN_REFRESH_TIME_MINUTES):
             self._token_start_time = datetime.now()
-            self.sp = sp.Spotify(auth_manager=self._auth_manager)
+            self.sp = spotipy.Spotify(auth_manager=self._auth_manager)
 
     def _get_audio_analysis_info(
         self,

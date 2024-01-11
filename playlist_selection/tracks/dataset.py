@@ -11,8 +11,8 @@ import botocore
 import pandas as pd
 from tqdm.auto import tqdm
 
-from . import TrackMeta
 from .audio import Track
+from .meta import TrackMeta
 
 LOGGER = logging.getLogger(__name__)
 

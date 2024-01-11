@@ -4,8 +4,10 @@ import logging
 import logging.config
 import os
 import uuid
+from contextlib import asynccontextmanager
 from typing import Annotated
 
+import pandas as pd
 import redis
 import spotipy
 from auth import SpotifyAuth
@@ -16,10 +18,28 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from playlist_selection.models import BaseModel, KnnModel
+
 # TODO: setup logging format etc
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+MODEL: BaseModel = KnnModel()
+
+@asynccontextmanager
+async def model_lifespan(app: FastAPI):
+    """Open/close model logic."""
+    global MODEL
+    MODEL.open(
+        bucket_name=os.environ["PLAYLIST_SELECTION_S3_BUCKET_NAME"],
+        model_name=os.environ["PLAYLIST_SELECTION_MODEL_NAME"],
+        profile_name=os.environ["PLAYLIST_SELECTION_S3_PROFILE_NAME"],
+    )
+    logger.info("Model loaded successefuly. %s %s", MODEL, MODEL.model_pipeline)
+    yield
+    del MODEL
 
 redis_db = redis.Redis(
     host=os.environ["REDIS_HOST"],
@@ -40,7 +60,7 @@ auth_dependency = SpotifyAuthDependency(
 DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
 
-app = FastAPI(debug=True)
+app = FastAPI(debug=True, lifespan=model_lifespan)
 templates = Jinja2Templates(directory="templates")
 app.secret_key = os.urandom(64)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -149,26 +169,44 @@ def _create_playlist(
 
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}
 @app.post("/generate")
-async def generate_playlist(request: Request, selected_songs_json: Annotated[str, Form()]):
+async def generate_playlist(request: Request, selected_songs_json: Annotated[str, Form()], auth: DependsOnAuth):
     """Generate playlists from user request."""
     selected_songs = json.loads(selected_songs_json)
-    # TODO: add baseline model usage
+    parser = auth.get_spotify_parser()
+    # TODO: вынести в датасет и написать адекватно
+    track_id_list = [value["track_id"] for value in selected_songs]
+    tracks_meta = parser.parse(track_id_list=track_id_list)
+    data = []
+    for meta in tracks_meta:
+        data.append(dict())
+        data[-1]["genre"] = meta.genres[0]
+        data[-1].update(meta.model_dump())
+        data[-1].update(meta.track_details.model_dump())
+        del data[-1]["track_details"]
+    features = pd.DataFrame(data)
+    preds = MODEL.predict(features)
+    # TODO: в целом можно попробовать брать с S3
+    # но тогда кажется надо начать по другому хранить ключи
+    preds_tracks = parser.parse(track_id_list=preds)
+    predicted_songs = [
+        dict(name=track.track_name, track_id=track.track_id, artist=", ".join(track.artist_name)) 
+        for track in preds_tracks
+    ]
     return templates.TemplateResponse(
         "confirm_playlist.html",
         dict(
             request=request,
-            songs=selected_songs,
-            selected_songs_json=selected_songs_json
+            predicted_songs=predicted_songs,
         ),
     )
 
 
 @app.post("/create")
-async def create_playlist(selected_songs_json: Annotated[str, Form()], auth: DependsOnAuth):
+async def create_playlist(predicted_songs: Annotated[str, Form()], auth: DependsOnAuth):
     """Create playlist for user."""
     sp = auth.get_spotipy()
-    selected_songs = json.loads(selected_songs_json)
-    recommended_songs = [value["track_id"] for value in selected_songs]
+    predicted_songs = eval(predicted_songs) # TODO: fix, unsafe
+    recommended_songs = [value["track_id"] for value in predicted_songs]
     # TODO: update
     return _create_playlist(
         sp=sp,

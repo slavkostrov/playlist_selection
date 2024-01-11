@@ -1,24 +1,22 @@
-"""Module """
-import numpy as np
-import pandas as pd
-import datetime
-import boto3
-import joblib
+"""Module with model."""
 import contextlib
+import datetime
 import shutil
 import tempfile
-
 from abc import ABC, abstractmethod
-from pandas.core.api import DataFrame as DataFrame
-from typing import List
 
+import boto3
+import joblib
+import numpy as np
+import pandas as pd
+from pandas.core.api import DataFrame as DataFrame
 from sklearn.base import BaseEstimator
-from sklearn.compose import ColumnTransformer, make_column_transformer, make_column_selector
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, FunctionTransformer
-from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.neighbors import NearestNeighbors
+from sklearn.compose import ColumnTransformer, make_column_selector, make_column_transformer
 from sklearn.decomposition import PCA
+from sklearn.impute import SimpleImputer
+from sklearn.neighbors import NearestNeighbors
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 DROP_COLUMNS = [
     "key",
@@ -63,8 +61,7 @@ class KnnModel(BaseModel):
         metric: str = "manhattan", 
         n_components: int = 141,
     ):
-        """
-        Initialize model.
+        """Initialize model.
 
         :param int k_neighbors: number of neighbors to predict
         :param str metric: distance metric that KNN optimize 
@@ -78,8 +75,7 @@ class KnnModel(BaseModel):
 
 
     def prettify(self, dataset) -> DataFrame:
-        """
-        Pretify incoming dataset.
+        """Pretify incoming dataset.
 
         Useful only for meta dataset from S3Dataset.
         """
@@ -97,14 +93,15 @@ class KnnModel(BaseModel):
         dataset.loc[bad_date, "album_release_date"] = dataset.loc[bad_date, "album_release_date"].str[:10]
         dataset["album_year"] = pd.to_datetime(dataset["album_release_date"]).dt.year
         dataset[["explicit", "is_local"]] = dataset[["explicit", "is_local"]].astype("int")
-        model_columns = dataset.columns.difference(["album_name", "artist_name", "track_name", "album_release_date",  "genres"])
+        model_columns = dataset.columns.difference(
+            ["album_name", "artist_name", "track_name", "album_release_date", "genres"]
+        )
 
         return dataset[model_columns]
 
 
     def get_preprocessor(self) -> ColumnTransformer:
-        """
-        Preproccess features.
+        """Preproccess features.
 
         Encode with OneHotEncoder every object feature.
         Scale number features with StandardScaler, replace NaN with SimpleImputer.
@@ -123,8 +120,7 @@ class KnnModel(BaseModel):
     
 
     def get_pipeline(self) -> Pipeline:
-        """
-        Union all preprocessing methods in one.
+        """Union all preprocessing methods in one.
 
         :return Pipeline model_pipeline: sklearn model pipeline 
         """
@@ -140,8 +136,7 @@ class KnnModel(BaseModel):
 
 
     def train(self, dataset) -> Pipeline:
-        """
-        Trains KNN model.
+        """Trains KNN model.
         
         :param pd.Dataframe dataset: meta dataset from S3Dataset
         
@@ -161,8 +156,7 @@ class KnnModel(BaseModel):
         model_name: str | None = None,
         profile_name: str | None = "default"
     ) -> None:
-        """
-        Dump model to S3.
+        """Dump model to S3.
 
         :param str bucket_name: s3 bucket name
         :param str model_name: model name
@@ -204,8 +198,7 @@ class KnnModel(BaseModel):
         model_name: str,
         profile_name: str | None = "default"
     ) -> BaseEstimator: 
-        """
-        Open KNN model from S3.
+        """Open KNN model from S3.
 
         :param bucket_name str: s3 bucket name
         :param str model_name: model name
@@ -238,15 +231,13 @@ class KnnModel(BaseModel):
         return self.model_pipeline
     
 
-    def predict(self, dataset) -> List:
-        """
-        Predict neighbor tracks with KNN model.
+    def predict(self, dataset) -> list:
+        """Predict neighbor tracks with KNN model.
 
         :param pd.Dataframe dataset: S3Dataset
 
         :return List neighbor_tracks: list of neighbor tracks
         """
-
         data = self.model_pipeline[:-1].transform(dataset)
 
         prediction = self.model_pipeline[-1].kneighbors(data, return_distance=True)

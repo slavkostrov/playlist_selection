@@ -1,11 +1,11 @@
 """Package for metrics."""
 from .metrics import (
-    CorrectGenreShare,
-    CorrectMultipleGenreShare,
     CorrectAlbumShare,
     CorrectArtistShare,
-    YearMeanDiff,
+    CorrectGenreShare,
+    CorrectMultipleGenreShare,
     SoundParametersDiff,
+    YearMeanDiff,
 )
 
 __all__ = [

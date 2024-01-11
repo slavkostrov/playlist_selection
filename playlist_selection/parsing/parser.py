@@ -55,8 +55,8 @@ class SpotifyParser(BaseParser):
 
         :param str client_id: App ID
         :param str client_secret: App password
-        :param str aws_access_key_id: AWS access key
         :param Spotify sp: spotify instance
+        :param str aws_access_key_id: AWS access key
         :param str aws_secret_access_key: AWS secret key
 
         :return:

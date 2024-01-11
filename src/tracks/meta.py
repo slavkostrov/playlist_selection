@@ -4,7 +4,6 @@ import re
 
 from pydantic import BaseModel, Field, validator
 
-
 S3_SAVE_PREFIX = "tracks" # Директория на s3 куда сохраняем мету
 
 

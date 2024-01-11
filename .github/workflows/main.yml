@@ -55,3 +55,14 @@ jobs:
       - name: Test coverage
         continue-on-error: true
         run: poetry run pytest --cov=src --cov-fail-under=60 tests/
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          push: false

@@ -80,6 +80,16 @@ poetry ruff check --config pyproject.toml --fix .
 
 VSCode supports `ruff` [extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff).
 
+#### Docker
+
+1. Create .env file with tokens
+```.env
+PLAYLIST_SELECTION_CLIENT_ID=
+PLAYLIST_SELECTION_CLIENT_SECRET=
+PLAYLIST_SELECTION_CALLBACK_URL=
+```
+2. Run docker-compose with `docker-compose up --build`
+
 
 #### Tests
 

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PlaylistSelection</title>
+    <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <h1>PlaylistSelection</h1>
+        </div>
+        <div class="login-section">
+            {% if request.cookies.get('playlist_selection_user_id') %}
+                <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login with Spotify</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main>
+        <!-- Main content goes here -->
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <!-- Your footer content -->
+    </footer>
+</body>
+</html>

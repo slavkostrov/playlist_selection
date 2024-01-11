@@ -5,13 +5,13 @@ Currently available metrics:
 - Доля правильно угаданных жанров
 
 2. CorrectMultipleGenreShare
-- Доля среднего количества пересечений по жанрам (мы храним списком)
+- Доля объектов, где угадан хотя бы один жанр (колонка `genres`)
 
 3. CorrectAlbumShare
 - Доля правильно угаданных альбомов
 
 4. CorrectArtistShare
-- Среднее количество пересечений по исполнителям (мы храним списком)
+- Доля объектов, где угадан хотя бы один исполнитель
 
 5. YearMeanDiff
 - Средняя разница в годе релиза
@@ -20,9 +20,10 @@ Currently available metrics:
 - Л2 норма для относительной разницы (берется max) параметров звука
 """
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
-import pandas as pd
 
 
 class BasicMetric(ABC):
@@ -34,27 +35,33 @@ class BasicMetric(ABC):
 
     @staticmethod
     @abstractmethod
-    def compute(df_true: pd.DataFrame, df_pred: pd.DataFrame) -> float:
+    def compute(y_true: Sequence[Any], y_pred: Sequence[Sequence[Any]]) -> float:
         """Calculate metric.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
+        Args:
+            y_true: true labels
+            y_pred: predicted labels (multiple for each true label)
+        
+        Returns:
+            Calculated metric value
         """
         raise NotImplementedError()
     
-    def __call__(self, df_true: pd.DataFrame, df_pred: pd.DataFrame) -> float:
-        """Calculate metric on instance call method.
+    def __call__(self, y_true: Sequence[Any], y_pred: Sequence[Sequence[Any]]) -> float:
+        """Object call method, uses self.compute.
+
+        Args:
+            y_true: true labels
+            y_pred: predicted labels (multiple for each true label)
         
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
+        Returns:
+            Calculated metric value
         """
-        if len(df_true) != len(df_pred):
+        if len(y_true) != len(y_pred):
             raise ValueError(
-                f"got not matching dataframes: df_true size is {len(df_true)}, df_pred size is {len(df_pred)}"
+                f"got not matching sequences: y_true size is {len(y_true)}, y_pred size is {len(y_pred)}"
             )
-        return self.compute(df_true, df_pred)
+        return self.compute(y_true, y_pred)
 
 
 class CorrectGenreShare(BasicMetric):
@@ -64,17 +71,33 @@ class CorrectGenreShare(BasicMetric):
         self.name = "CorrectGenreShare"
 
     @staticmethod
-    def compute(df_true: pd.DataFrame, df_pred: pd.DataFrame):
+    def compute(y_true: Sequence[str], y_pred: Sequence[Sequence[str]]) -> float:
         """Calculates share of correct predicted genres.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
-        """
-        if "genre" not in df_true.columns or "genre" not in df_pred.columns:
-            raise ValueError("missing column genre in input data")
+        y_true example:
+            [
+                "pop" - first track has pop genre
+                "rock" - second track has rock genre
+                ...
+            ]
 
-        return (df_true["genre"] == df_pred["genre"]).sum() / len(df_true)
+        y_pred example:
+            [
+                ["pop", "hip-hip", "pop"] - for the first input track we have 3 predictions, each has one genre
+                ["rock", "rnb", "alt-rock"] - ...
+                ...
+            ]
+
+        Args:
+            y_true: true genres
+            y_pred: predicted genres (multiple for each true genre)
+        
+        Returns:
+            Share of correctly predicted genres
+        """
+        equal_mask = np.array(y_pred) == np.array(y_true).reshape(-1, 1)
+        return equal_mask.mean()
+
 
 
 class CorrectMultipleGenreShare(BasicMetric):
@@ -84,23 +107,42 @@ class CorrectMultipleGenreShare(BasicMetric):
         self.name = "CorrectMultipleGenreShare"
 
     @staticmethod
-    def compute(df_true: pd.DataFrame, df_pred: pd.DataFrame):
+    def compute(y_true: Sequence[Sequence[str]], y_pred: Sequence[Sequence[Sequence[str]]]) -> float:
         """Calculates share of correct genre intersections.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
-        """
-        if "genres" not in df_true.columns or "genres" not in df_pred.columns:
-            raise ValueError("missing column genres in input data")
+        y_true example:
+            [
+                ["pop", "rnb"] - first track got 2 genres
+                ["hip-hop", "pop", "alt-rock"] - second track got 3,
+                ...
+            ]
+
+        y_pred example:
+            [
+                [
+                    ["pop", "rock"],
+                    ["rnb", "pop", "rock],
+                    ["country-rock", "rnb"],
+                ] - for the first input track we have 3 predictions, each has multiple genres
+                ...
+            ]
+
+        Args:
+            y_true: true genres
+            y_pred: predicted genres (multiple for each true genres)
         
-        true_genres = df_true["genres"].apply(set).to_numpy()
-        pred_genres = df_pred["genres"].apply(set).to_numpy()
+        Returns:
+            Share of objects, where at least on genre is correct
+        """
+        y_true_set = map(set, y_true)
+        y_pred_set = [[set(genres) for genres in predictions] for predictions in y_pred]
 
-        intersect = true_genres & pred_genres
-        len_fn = np.vectorize(len)
-
-        return np.nanmean(len_fn(intersect) / len_fn(true_genres))
+        mask = [
+            [bool(true_genres & pred_genres) for pred_genres in pred_genres_lst]
+            for true_genres, pred_genres_lst in zip(y_true_set, y_pred_set)
+        ]
+        # Count as positive if y_true and y_pred have at least one intersection
+        return np.mean(mask)
 
 
 class CorrectAlbumShare(BasicMetric):
@@ -110,17 +152,18 @@ class CorrectAlbumShare(BasicMetric):
         self.name = "CorrectAlbumShare"
 
     @staticmethod
-    def compute(df_true: pd.DataFrame, df_pred: pd.DataFrame):
+    def compute(y_true: Sequence[str], y_pred: Sequence[Sequence[str]]) -> float:
         """Calculates share of correct predicted albums.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
+        Args:
+            y_true: true albums
+            y_pred: predicted albums (multiple for each true album)
+        
+        Returns:
+            Share of correctly predicted albums
         """
-        if "album_name" not in df_true.columns or "album_name" not in df_pred.columns:
-            raise ValueError("missing column album_name in input data")
-
-        return (df_true["album_name"] == df_pred["album_name"]).sum() / len(df_true)
+        equal_mask = np.array(y_pred) == np.array(y_true).reshape(-1, 1)
+        return equal_mask.mean()
     
 
 class CorrectArtistShare(BasicMetric):
@@ -130,23 +173,25 @@ class CorrectArtistShare(BasicMetric):
         self.name = "CorrectArtistShare"
 
     @staticmethod
-    def compute(df_true: pd.DataFrame, df_pred: pd.DataFrame):
+    def compute(y_true: Sequence[Sequence[str]], y_pred: Sequence[Sequence[Sequence[str]]]) -> float:
         """Calculates share of correct predicted artists.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
-        """
-        if "artist_name" not in df_true.columns or "artist_name" not in df_pred.columns:
-            raise ValueError("missing column artist_name in input data")
+        Args:
+            y_true: true artists
+            y_pred: predicted artists (multiple for each true artists)
         
-        true_artists = df_true["artist_name"].apply(set).to_numpy()
-        pred_artists = df_pred["artist_name"].apply(set).to_numpy()
+        Returns:
+            Share of objects, where at least on artist is correct
+        """
+        y_true_set = map(set, y_true)
+        y_pred_set = [[set(genres) for genres in predictions] for predictions in y_pred]
 
-        intersect = true_artists & pred_artists
-        len_fn = np.vectorize(len)
-
-        return (len_fn(intersect) / len_fn(true_artists)).mean()
+        mask = [
+            [bool(true_genres & pred_genres) for pred_genres in pred_genres_lst]
+            for true_genres, pred_genres_lst in zip(y_true_set, y_pred_set)
+        ]
+        # Count as positive if y_true and y_pred have at least one intersection
+        return np.mean(mask)
     
 
 class YearMeanDiff(BasicMetric):
@@ -156,20 +201,18 @@ class YearMeanDiff(BasicMetric):
         self.name = "YearMeanDiff"
     
     @staticmethod
-    def compute(df_true: pd.DataFrame, df_pred: pd.DataFrame):
+    def compute(y_true: Sequence[int], y_pred: Sequence[Sequence[int]]) -> float:
         """Calculates mean difference in years of track release dates.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
-        """
-        if "album_release_date" not in df_true.columns or "album_release_date" not in df_pred.columns:
-            raise ValueError("missing column album_release_date in input data")
+        Args:
+            y_true: true track release years
+            y_pred: predicted track release years (multiple for each true year)
         
-        true_years = pd.to_datetime(df_true["album_release_date"]).dt.year
-        pred_years = pd.to_datetime(df_pred["album_release_date"]).dt.year
-
-        return abs(true_years - pred_years).mean()
+        Returns:
+            Mean absolute year difference
+        """
+        year_diff = np.array(y_pred) - np.array(y_true).reshape(-1, 1)
+        return abs(year_diff).mean()
         
 
 class SoundParametersDiff(BasicMetric):
@@ -179,22 +222,23 @@ class SoundParametersDiff(BasicMetric):
         self.name = "SoundParametersDiff"
     
     @staticmethod
-    def compute(df_true: pd.DataFrame, df_pred: pd.DataFrame):
-        """Calculates mean l2 norm for sound parameters relative difference.
+    def compute(y_true: Sequence[Sequence[float]], y_pred: Sequence[Sequence[Sequence[float]]]) -> float:
+        """Calculates share of correct predicted artists.
 
-        :param pd.DataFrame df_true: Датафрейм с объектами для предсказания
-        :param pd.DataFrame df_pred: Датафрейм с предсказанными объектами
-        :return float: Значение метрики
-        """
-        sound_columns = [
-            "danceability", "energy", "loudness", "speechiness", "acousticness", "instrumentalness", "valence", "tempo"
-        ]
-        if len(df_true.columns.intersection(sound_columns).intersection(df_pred.columns)) != len(sound_columns):
-            raise ValueError(f"missing one of {', '.join(sound_columns)} columns in input data")
+        Args:
+            y_true: true sound parameters
+            y_pred: predicted sound parameters (multiple for each input object)
         
-        true_sound = df_true[sound_columns].to_numpy()
-        pred_sound = df_pred[sound_columns].to_numpy()
+        Returns:
+            L2 norm of sound parameters relative difference
+        """
+        def l2_norm(first, second):
+            first, second = np.array(first), np.array(second)
+            diff = np.abs(first - second) / np.abs(np.maximum(first, second))
+            return np.sqrt(np.square(diff).sum()).mean()
 
-        sound_diff = np.abs(true_sound - pred_sound) / np.abs(np.maximum(true_sound, pred_sound))
-
-        return np.sqrt(np.nansum(np.square(sound_diff), axis=1)).mean()
+        sound_diff = [
+            [l2_norm(true_genres, pred_genres) for pred_genres in pred_genres_lst]
+            for true_genres, pred_genres_lst in zip(y_true, y_pred)
+        ]
+        return np.array(sound_diff).mean()

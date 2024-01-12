@@ -183,7 +183,7 @@ async def api_search(
     """Endpoint for search tracks meta without Auth."""
     tracks_meta = parser.parse(song_list=song_list)
     tracks_meta = list(map(TrackMeta.to_dict, tracks_meta))
-    return tracks_meta
+    return json.dumps(tracks_meta, allow_nan=True)
 
 
 @app.get("/api/generate")
@@ -208,7 +208,7 @@ async def api_generate_playlist(
     # но тогда кажется надо начать по другому хранить ключи
     meta_predicted = parser.parse(track_id_list=predictions)
     meta_predicted = list(map(TrackMeta.to_dict, meta_predicted))
-    return meta_predicted
+    return json.dumps(meta_predicted, allow_nan=True)
 
 
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}

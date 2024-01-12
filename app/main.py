@@ -7,6 +7,7 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Annotated
 
+import orjson
 import redis
 import spotipy
 from auth import SpotifyAuth
@@ -175,7 +176,7 @@ def _create_playlist(
 async def api_search(
     song_list: list[tuple[str, str]],
     parser: DependsOnParser,
-):
+) -> ORJSONResponse:
     """Endpoint for search tracks meta without Auth."""
     tracks_meta = parser.parse(song_list=song_list)
     tracks_meta = list(map(TrackMeta.to_dict, tracks_meta))
@@ -187,7 +188,7 @@ async def api_generate_playlist(
     parser: DependsOnParser,
     track_id_list: list[str] | None = None,
     song_list: list[tuple[str, str]] | None = None,
-):
+) -> ORJSONResponse:
     """API endpoint for predict tracks without auth."""
     if track_id_list and song_list:
         raise HTTPException(status_code=400, detail="Only one of `song_list` or `track_id_list` must be presented.")
@@ -213,7 +214,8 @@ async def generate_playlist(request: Request, selected_songs_json: Annotated[str
     """Generate playlists from user request."""
     selected_songs = json.loads(selected_songs_json)
     track_id_list = [value["track_id"] for value in selected_songs]
-    preds_tracks = await api_generate_playlist(parser=parser, track_id_list=track_id_list)
+    preds_tracks_json = await api_generate_playlist(parser=parser, track_id_list=track_id_list)
+    preds_tracks = orjson.loads(preds_tracks_json.body)
     predicted_songs = [
         dict(
             name=track["track_name"],

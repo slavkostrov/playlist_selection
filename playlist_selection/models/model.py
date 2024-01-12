@@ -129,7 +129,8 @@ class KnnModel(BaseModel):
             ("KNN", NearestNeighbors(n_neighbors=self.k_neighbors + 1, metric=self.metric))
         ]
         model_pipeline = Pipeline(stages)
-
+        # TODO: validate
+        # model_pipeline.set_output(transform="pandas")
         return model_pipeline
 
 

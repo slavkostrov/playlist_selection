@@ -4,6 +4,7 @@ import logging
 import logging.config
 import os
 import uuid
+from ast import literal_eval
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -146,32 +147,6 @@ def callback(code: str, auth: DependsOnAuth):
     return response
 
 
-# TODO: add decorator?
-def _create_playlist(
-    sp: spotipy.Spotify,
-    name: str,
-    songs: list[str],
-):
-    """Create playlist with given songs."""
-    # user_playlists = sp.current_user_playlists()
-    # Spotify can create playlists with same name, delete?
-    # user_playlists_names = [playlist.get("name") for playlist in user_playlists.get("items")]
-    # while name in user_playlists_names:
-    #     name = name + "1"
-    #     logger.warning("Playlist with given name already exists, updated name to %s", name)
-
-    user = sp.current_user()
-    LOGGER.info("Creating new playlist for user %s with name %s.", user["id"], name)
-    playlist = sp.user_playlist_create(
-        user=user["id"],
-        name=name,
-        public=False,
-    )
-    LOGGER.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
-    sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
-    return "Playlist added" # sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
-
-
 @app.get("/api/search")
 async def api_search(
     song_list: list[tuple[str, str]],
@@ -233,15 +208,39 @@ async def generate_playlist(request: Request, selected_songs_json: Annotated[str
     )
 
 
+def _create_playlist(
+    sp: spotipy.Spotify,
+    parser: SpotifyParser,
+    name: str,
+    songs: list[str],
+):
+    """Create playlist with given songs."""
+    user = sp.current_user()
+    LOGGER.info("Creating new playlist for user %s with name %s.", user["id"], name)
+    playlist = sp.user_playlist_create(
+        user=user["id"],
+        name=name,
+        public=False,
+    )
+    LOGGER.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
+    sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
+    return parser.sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
+
+
 @app.post("/create")
-async def create_playlist(predicted_songs: Annotated[str, Form()], auth: DependsOnAuth):
+async def create_playlist(
+    predicted_songs: Annotated[str, Form()],
+    auth: DependsOnAuth,
+    parser: DependsOnParser,
+):
     """Create playlist for user."""
     sp = auth.get_spotipy()
-    predicted_songs = eval(predicted_songs) # TODO: fix, unsafe
+    predicted_songs = literal_eval(predicted_songs)
     recommended_songs = [value["track_id"] for value in predicted_songs]
-    # TODO: update
+    # TODO: update with name, take it from user input?
     return _create_playlist(
         sp=sp,
+        parser=parser,
         name="TEST", 
         songs=recommended_songs,
     )

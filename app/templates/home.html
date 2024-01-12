@@ -17,6 +17,31 @@
             <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
             <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
         </form>
+
+        {% if playlist_link %}
+            <div id="successNotification" class="notification">
+                <span class="close-btn" onclick="closeNotification()">&times;</span>
+                <p>Success! Your playlist created. <a href="#" id="notificationLink">Link to playlist</a></p>
+            </div>
+
+            <script>
+                function showNotification(link) {
+                    // Display the notification
+                    document.getElementById("successNotification").style.display = "block";
+
+                    // Set the link for the notification
+                    document.getElementById("notificationLink").href = link;
+                }
+
+                function closeNotification() {
+                    // Close the notification
+                    document.getElementById("successNotification").style.display = "none";
+                }
+
+                showNotification("{{ playlist_link }}");
+
+            </script>
+        {% endif %}
         <script>
             function prepareSelectedSongs() {
                 const selectedSongs = [];

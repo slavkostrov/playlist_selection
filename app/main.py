@@ -91,7 +91,7 @@ def get_user_songs(sp: spotipy.Spotify) -> list[dict[str, str]]:
     # limit - limit of songs per 1 request
     # TODO: add search in form
     # TODO: add pages in form
-    # TODO: save all selected tracks 
+    # TODO: save all selected tracks
     songs = []
     # TODO: add some cache?
     for idx, item in enumerate(results['items']):
@@ -105,27 +105,36 @@ def get_user_songs(sp: spotipy.Spotify) -> list[dict[str, str]]:
             }
         )
     return songs
-    
+
 
 @app.get("/")
-def index(request: Request, auth: DependsOnAuth):
+async def index(
+    request: Request,
+    auth: DependsOnAuth,
+    # TODO: fix я не знаю как это делать правильно
+    playlist_link: str | None = None,
+):
     """Main page."""
     songs = []
     current_user = None
-    
+
     sp: spotipy.Spotify | None = auth.get_spotipy(raise_on_requires_login=False)
     if sp:
         current_user = sp.current_user()
-        songs = get_user_songs(sp=sp)        
+        songs = get_user_songs(sp=sp)
+
+    if playlist_link and not playlist_link.startswith("https://open.spotify.com/playlist/"):
+        # TODO: fix
+        playlist_link = None
 
     return templates.TemplateResponse(
         "home.html",
-        dict(request=request, songs=songs, current_user=current_user),
+        dict(request=request, songs=songs, current_user=current_user, playlist_link=playlist_link),
     )
 
 
 @app.get("/logout")
-def logout(auth: DependsOnAuth):
+async def logout(auth: DependsOnAuth):
     """Logout URL, remove token key from cookies and token info from redis."""
     response = RedirectResponse("/")
     auth.remove_user()
@@ -133,14 +142,14 @@ def logout(auth: DependsOnAuth):
     return response
 
 @app.get("/login")
-def login(auth: DependsOnAuth):
+async def login(auth: DependsOnAuth):
     """Login URL, save meta info about user, redirect to spotify OAuth."""
     auth_url = auth.get_authorize_url()
     return RedirectResponse(auth_url)
 
 
 @app.get("/callback/")
-def callback(code: str, auth: DependsOnAuth):
+async def callback(code: str, auth: DependsOnAuth):
     """Callback after spotify side login. Save token to current session and redirect to main page."""
     auth.cache_access_token(code=code)
     response = RedirectResponse("/")
@@ -196,7 +205,7 @@ async def generate_playlist(request: Request, selected_songs_json: Annotated[str
             name=track["track_name"],
             track_id=track["track_id"],
             artist=", ".join(track["artist_name"]),
-        )         
+        )
         for track in preds_tracks
     ]
     return templates.TemplateResponse(
@@ -224,11 +233,13 @@ def _create_playlist(
     )
     LOGGER.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
     sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
-    return parser.sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
+    # TODO: DEBUG, remove, add success alert with link to playlist
+    return playlist["id"]
 
 
 @app.post("/create")
 async def create_playlist(
+    request: Request,
     predicted_songs: Annotated[str, Form()],
     auth: DependsOnAuth,
     parser: DependsOnParser,
@@ -237,13 +248,16 @@ async def create_playlist(
     sp = auth.get_spotipy()
     predicted_songs = literal_eval(predicted_songs)
     recommended_songs = [value["track_id"] for value in predicted_songs]
-    # TODO: update with name, take it from user input?
-    return _create_playlist(
+    playlist_id = _create_playlist(
         sp=sp,
         parser=parser,
-        name="TEST", 
+        # TODO: update name, take it from user input?
+        name="TEST",
         songs=recommended_songs,
     )
+    playlist_link = f"https://open.spotify.com/playlist/{playlist_id}"
+    response = await index(request=request, auth=auth, playlist_link=playlist_link)
+    return response
 
 
 # TODO: think about security, tokens storage etc

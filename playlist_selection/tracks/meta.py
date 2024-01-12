@@ -100,11 +100,17 @@ class TrackMeta(BaseModel):
         folder_name = (self.track_name + self.artist_name[0]).replace(" ", "_")
         return f"{prefix}/{folder_name}/meta"
     
+    @property
+    def href(self) -> str:
+        """Public link to track in spotify."""
+        return f"https://open.spotify.com/track/{self.track_id}"
+    
     def to_dict(self):
         """Transform object to dict."""
         row = dict()
         row.update(self.model_dump())
         row.update(self.track_details.model_dump())
         row["genre"] = self.genres[0] if self.genres else None
+        row["href"] = self.href
         del row["track_details"]
         return row

@@ -8,10 +8,7 @@ from spotipy.cache_handler import RedisCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
 
 # TODO: setup logging format etc
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
+LOGGER = logging.getLogger(__name__) # get_logger(__name__)
 
 class SpotifyAuth:
     """Wrapper of authorization in Spotify.
@@ -56,7 +53,7 @@ class SpotifyAuth:
         """Cache access token."""
         if not self.is_known_user:
             raise UnknownCookieException
-        logger.info("Creating access token for user with uuid %s.", self._token_key)
+        LOGGER.info("Creating access token for user with uuid %s.", self._token_key)
         return self._sp_oauth.get_access_token(code, as_dict=False)    
 
     def get_authorize_url(self):
@@ -67,7 +64,7 @@ class SpotifyAuth:
         """Remove user from Redis."""
         if not self.is_known_user:
             raise RuntimeError("Got unknown user!")
-        logger.info("Remove user with uuid %s from DB.", self._token_key)
+        LOGGER.info("Remove user with uuid %s from DB.", self._token_key)
         self._redis_db.delete(self._token_key)
         return True
 

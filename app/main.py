@@ -22,11 +22,7 @@ from playlist_selection.parsing.parser import SpotifyParser
 from playlist_selection.tracks.dataset import get_meta_features
 from playlist_selection.tracks.meta import TrackMeta
 
-# TODO: setup logging format etc
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
+LOGGER = logging.getLogger(__name__)
 
 MODEL: BaseModel = KnnModel()
 
@@ -39,7 +35,7 @@ async def model_lifespan(app: FastAPI):
         model_name=os.environ["PLAYLIST_SELECTION_MODEL_NAME"],
         profile_name=os.environ["PLAYLIST_SELECTION_S3_PROFILE_NAME"],
     )
-    logger.info("Model loaded successefuly. %s %s", MODEL, MODEL.model_pipeline)
+    LOGGER.info("Model loaded successefuly. %s %s", MODEL, MODEL.model_pipeline)
     yield
     del MODEL
 
@@ -164,13 +160,13 @@ def _create_playlist(
     #     logger.warning("Playlist with given name already exists, updated name to %s", name)
 
     user = sp.current_user()
-    logger.info("Creating new playlist for user %s with name %s.", user["id"], name)
+    LOGGER.info("Creating new playlist for user %s with name %s.", user["id"], name)
     playlist = sp.user_playlist_create(
         user=user["id"],
         name=name,
         public=False,
     )
-    logger.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
+    LOGGER.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
     sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
     return "Playlist added" # sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
 

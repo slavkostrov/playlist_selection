@@ -1,7 +1,5 @@
 """Module with downloaders implementation."""
 import contextlib
-import logging
-import logging.config
 import shutil
 import tempfile
 import typing as tp
@@ -12,14 +10,11 @@ from concurrent.futures import ThreadPoolExecutor
 import boto3
 from pytube import Search, YouTube
 
+from ..logging_config import get_logger
+
 Song = namedtuple("Song", ["name", "artist"])
 
-LOGGER = logging.getLogger(__name__)
-# with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
-#     logging.config.dictConfig(yaml.safe_load(fin))
-
-
-
+LOGGER = get_logger(__name__)
 
 class BaseDownloader(ABC):
     """Base downloader class."""

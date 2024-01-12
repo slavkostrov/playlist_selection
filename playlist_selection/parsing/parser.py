@@ -1,7 +1,5 @@
 """Module with parsers."""
 import functools
-import logging
-import logging.config
 import typing as tp
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
@@ -12,12 +10,10 @@ import spotipy
 from spotipy.exceptions import SpotifyException
 from spotipy.oauth2 import SpotifyClientCredentials
 
+from ..logging_config import get_logger
 from ..tracks.meta import TrackDetails, TrackMeta
 
-LOGGER = logging.getLogger(__name__)
-# with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
-#     logging.config.dictConfig(yaml.safe_load(fin))
-
+LOGGER = get_logger(__name__)
 
 SPOTIFY_TOKEN_REFRESH_TIME_MINUTES = 55 # In minutes
 ARTIST_TOP_TRACKS = 5 # Number of tracks to collect by artist search

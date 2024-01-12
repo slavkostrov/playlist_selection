@@ -1,6 +1,5 @@
 """Module with dataset implementation."""
 import itertools
-import logging
 import tempfile
 import typing as tp
 from abc import ABC, abstractmethod
@@ -11,10 +10,11 @@ import botocore
 import pandas as pd
 from tqdm.auto import tqdm
 
+from ..logging_config import get_logger
 from .audio import Track
 from .meta import TrackMeta
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = get_logger(__name__)
 
 class BaseDataset(ABC):
     """Base class for all dataset classes."""

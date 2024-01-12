@@ -6,6 +6,7 @@ import os
 import uuid
 from ast import literal_eval
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 
 import orjson
@@ -69,7 +70,11 @@ DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
 app = FastAPI(debug=True, lifespan=model_lifespan)
 templates = Jinja2Templates(directory="templates")
 app.secret_key = os.urandom(64)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).parent / "static"),
+    name="static"
+)
 
 @app.exception_handler(RequiresLoginException)
 async def requires_login_exception_handler(request: Request, exc: RequiresLoginException) -> Response:
@@ -117,7 +122,6 @@ async def index(
     """Main page."""
     songs = []
     current_user = None
-
     sp: spotipy.Spotify | None = auth.get_spotipy(raise_on_requires_login=False)
     if sp:
         current_user = sp.current_user()

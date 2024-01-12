@@ -32,6 +32,7 @@ orjson = "^3.9.10"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.2"
 pytest-cov = "^4.1.0"
+httpx = "^0.26.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.1.1"

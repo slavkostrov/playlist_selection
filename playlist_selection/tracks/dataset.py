@@ -112,15 +112,19 @@ class S3Dataset(BaseDataset):
         data = []
         for key, obj in self.dataset_.items():
             row = dict(key=key)
-            row["genre"] = obj["genre"]
-            row["audio_path"] = obj.get("audio_path")
-            
+
             meta: TrackMeta | None = obj.get("meta")
             if meta:
-                row.update(meta.model_dump())
-                row.update(meta.track_details.model_dump())
-                del row["track_details"]
+                row.update(meta.to_dict())
+
+            row["genre"] = obj["genre"]
+            row["audio_path"] = obj.get("audio_path")
+
             data.append(row)
             
         df = pd.DataFrame(data)
         return df
+    
+def get_meta_features(meta_list: list[TrackMeta]) -> pd.DataFrame:
+    """Create dataframe with features from meta."""
+    return pd.DataFrame(list(map(TrackMeta.to_dict, meta_list)))

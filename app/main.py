@@ -7,18 +7,20 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-import pandas as pd
 import redis
 import spotipy
 from auth import SpotifyAuth
-from dependencies import DEFAULT_USER_TOKEN_COOKIE, AuthCookieDependency, SpotifyAuthDependency
+from dependencies import DEFAULT_USER_TOKEN_COOKIE, AuthCookieDependency, ParserDependency, SpotifyAuthDependency
 from exceptions import RequiresLoginException, UnknownCookieException
-from fastapi import Depends, FastAPI, Form, Request, Response
+from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from playlist_selection.models import BaseModel, KnnModel
+from playlist_selection.parsing.parser import SpotifyParser
+from playlist_selection.tracks.dataset import get_meta_features
+from playlist_selection.tracks.meta import TrackMeta
 
 # TODO: setup logging format etc
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +59,12 @@ auth_dependency = SpotifyAuthDependency(
     scope="user-library-read playlist-modify-private playlist-read-private",
 )
 
+parser_dependency = ParserDependency(
+    client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
+    client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
+)
+
+DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]
 DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
 
@@ -167,29 +175,55 @@ def _create_playlist(
     return "Playlist added" # sp.playlist(playlist["id"]) # TODO: DEBUG, remove, add success alert
 
 
-# TODO: create and use API endpoint like /api/generate/{query_song_ids}
-@app.post("/generate")
-async def generate_playlist(request: Request, selected_songs_json: Annotated[str, Form()], auth: DependsOnAuth):
-    """Generate playlists from user request."""
-    selected_songs = json.loads(selected_songs_json)
-    parser = auth.get_spotify_parser()
-    # TODO: вынести в датасет и написать адекватно
-    track_id_list = [value["track_id"] for value in selected_songs]
-    tracks_meta = parser.parse(track_id_list=track_id_list)
-    data = []
-    for meta in tracks_meta:
-        data.append(dict())
-        data[-1]["genre"] = meta.genres[0]
-        data[-1].update(meta.model_dump())
-        data[-1].update(meta.track_details.model_dump())
-        del data[-1]["track_details"]
-    features = pd.DataFrame(data)
-    preds = MODEL.predict(features)
+@app.get("/api/search")
+async def api_search(
+    song_list: list[tuple[str, str]],
+    parser: DependsOnParser,
+):
+    """Endpoint for search tracks meta without Auth."""
+    tracks_meta = parser.parse(song_list=song_list)
+    tracks_meta = list(map(TrackMeta.to_dict, tracks_meta))
+    return tracks_meta
+
+
+@app.get("/api/generate")
+async def api_generate_playlist(
+    parser: DependsOnParser,
+    track_id_list: list[str] | None = None,
+    song_list: list[tuple[str, str]] | None = None,
+):
+    """API endpoint for predict tracks without auth."""
+    if track_id_list and song_list:
+        raise HTTPException(status_code=400, detail="Only one of `song_list` or `track_id_list` must be presented.")
+    elif track_id_list:
+        parser_kwargs = dict(track_id_list=track_id_list)
+    elif song_list:
+        parser_kwargs = dict(song_list=song_list)
+    else:
+        raise HTTPException(status_code=400, detail="`song_list` or `track_id_list` must be presented.")
+    tracks_meta = parser.parse(**parser_kwargs)
+    features = get_meta_features(tracks_meta)
+    predictions =  MODEL.predict(features)
     # TODO: в целом можно попробовать брать с S3
     # но тогда кажется надо начать по другому хранить ключи
-    preds_tracks = parser.parse(track_id_list=preds)
+    meta_predicted = parser.parse(track_id_list=predictions)
+    meta_predicted = list(map(TrackMeta.to_dict, meta_predicted))
+    return meta_predicted
+
+
+# TODO: create and use API endpoint like /api/generate/{query_song_ids}
+@app.post("/generate")
+async def generate_playlist(request: Request, selected_songs_json: Annotated[str, Form()], parser: DependsOnParser):
+    """Generate playlists from user request."""
+    selected_songs = json.loads(selected_songs_json)
+    track_id_list = [value["track_id"] for value in selected_songs]
+    preds_tracks = await api_generate_playlist(parser=parser, track_id_list=track_id_list)
     predicted_songs = [
-        dict(name=track.track_name, track_id=track.track_id, artist=", ".join(track.artist_name)) 
+        dict(
+            name=track["track_name"],
+            track_id=track["track_id"],
+            artist=", ".join(track["artist_name"]),
+        )         
         for track in preds_tracks
     ]
     return templates.TemplateResponse(

@@ -7,8 +7,6 @@ from exceptions import RequiresLoginException, UnknownCookieException
 from spotipy.cache_handler import RedisCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
 
-from playlist_selection.parsing import SpotifyParser
-
 # TODO: setup logging format etc
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,7 +43,6 @@ class SpotifyAuth:
         self.is_known_user = bool(token_key)
 
         cache_handler = RedisCacheHandler(self._redis_db, key=token_key)
-        self._parser = SpotifyParser(client_id=client_id, client_secret=client_secret)
         self._sp_oauth = SpotifyOAuth(
             client_id=client_id,
             client_secret=client_secret,
@@ -85,10 +82,3 @@ class SpotifyAuth:
                 return None
         sp = spotipy.Spotify(token_info["access_token"])
         return sp
-
-    def get_spotify_parser(self) -> SpotifyParser:
-        """Return instance of SpotifyParser."""
-        return self._parser
-        sp = self.get_spotipy()
-        spotify_parser = SpotifyParser(sp=sp)
-        return spotify_parser

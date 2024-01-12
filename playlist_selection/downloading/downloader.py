@@ -8,17 +8,15 @@ import typing as tp
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import boto3
-import yaml
 from pytube import Search, YouTube
 
 Song = namedtuple("Song", ["name", "artist"])
 
-LOGGER = logging.getLogger("downloader_logger")
-with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
-    logging.config.dictConfig(yaml.safe_load(fin))
+LOGGER = logging.getLogger(__name__)
+# with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
+#     logging.config.dictConfig(yaml.safe_load(fin))
 
 
 

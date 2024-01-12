@@ -99,3 +99,12 @@ class TrackMeta(BaseModel):
         prefix = prefix or S3_SAVE_PREFIX
         folder_name = (self.track_name + self.artist_name[0]).replace(" ", "_")
         return f"{prefix}/{folder_name}/meta"
+    
+    def to_dict(self):
+        """Transform object to dict."""
+        row = dict()
+        row.update(self.model_dump())
+        row.update(self.track_details.model_dump())
+        row["genre"] = self.genres[0] if self.genres else None
+        del row["track_details"]
+        return row

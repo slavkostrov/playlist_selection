@@ -90,6 +90,7 @@ PLAYLIST_SELECTION_CALLBACK_URL=
 ```
 2. Run docker-compose with `docker-compose up --build`
 
+Copy your AWS creds in current directory.
 
 #### Tests
 

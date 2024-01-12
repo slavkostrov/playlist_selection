@@ -1,7 +1,9 @@
 """Module with model."""
 import datetime
 import tempfile
+import typing as tp
 from abc import ABC, abstractmethod
+from ast import literal_eval
 
 import boto3
 import joblib
@@ -23,6 +25,13 @@ DROP_COLUMNS = [
     "artist_id",
     # "track_id"
 ]
+
+
+def safe_eval(value: str | tp.Any) -> tp.Any:
+    """Evaluate expression if value is instance of string."""
+    if isinstance(value, str):
+        return literal_eval(value)
+    return value
 
 
 class BaseModel(ABC):
@@ -72,10 +81,9 @@ class KnnModel(BaseModel):
         dataset.set_index("track_id", inplace=True)
 
         if dataset["genres"].dtype == "object":
-            dataset["genres"] = dataset["genres"].apply(eval)
+            dataset["genres"] = dataset["genres"].apply(safe_eval)
         if dataset["artist_name"].dtype == "object":
-            if isinstance(dataset["artist_name"].values.tolist()[0], str):
-                dataset["artist_name"] = dataset["artist_name"].apply(eval).apply(set)
+            dataset["artist_name"] = dataset["artist_name"].apply(safe_eval)
         else:
             dataset["artist_name"] = dataset["artist_name"].apply(set)
 

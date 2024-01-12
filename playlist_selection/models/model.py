@@ -1,7 +1,5 @@
 """Module with model."""
-import contextlib
 import datetime
-import shutil
 import tempfile
 from abc import ABC, abstractmethod
 
@@ -25,16 +23,6 @@ DROP_COLUMNS = [
     "artist_id",
     # "track_id"
 ]
-
-
-@contextlib.contextmanager
-def make_temp_directory():
-    """Context manager for creating temp directories."""
-    temp_dir = tempfile.mkdtemp()
-    try:
-        yield temp_dir
-    finally:
-        shutil.rmtree(temp_dir)
 
 
 class BaseModel(ABC):
@@ -84,8 +72,7 @@ class KnnModel(BaseModel):
         dataset.set_index("track_id", inplace=True)
 
         if dataset["genres"].dtype == "object":
-            if isinstance(dataset["genres"].values.tolist()[0], str):
-                dataset["genres"] = dataset["genres"].apply(eval)
+            dataset["genres"] = dataset["genres"].apply(eval)
         if dataset["artist_name"].dtype == "object":
             if isinstance(dataset["artist_name"].values.tolist()[0], str):
                 dataset["artist_name"] = dataset["artist_name"].apply(eval).apply(set)
@@ -174,7 +161,7 @@ class KnnModel(BaseModel):
 
         s3_client = boto3.Session(profile_name=profile_name).client("s3")
 
-        with make_temp_directory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             joblib.dump(
                 value=self.model_pipeline, 
                 filename=f"{temp_dir}/{model_name}.pkl"
@@ -213,7 +200,7 @@ class KnnModel(BaseModel):
 
         s3_client = boto3.Session(profile_name=profile_name).client("s3")
 
-        with make_temp_directory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             s3_client.download_file(
                 Bucket=bucket_name,
                 Key=f"models/{model_name}/model_file.pkl",

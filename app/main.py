@@ -13,7 +13,7 @@ from auth import SpotifyAuth
 from dependencies import DEFAULT_USER_TOKEN_COOKIE, AuthCookieDependency, ParserDependency, SpotifyAuthDependency
 from exceptions import RequiresLoginException, UnknownCookieException
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -183,7 +183,7 @@ async def api_search(
     """Endpoint for search tracks meta without Auth."""
     tracks_meta = parser.parse(song_list=song_list)
     tracks_meta = list(map(TrackMeta.to_dict, tracks_meta))
-    return json.dumps(tracks_meta, allow_nan=True)
+    return ORJSONResponse(tracks_meta)
 
 
 @app.get("/api/generate")
@@ -208,7 +208,7 @@ async def api_generate_playlist(
     # но тогда кажется надо начать по другому хранить ключи
     meta_predicted = parser.parse(track_id_list=predictions)
     meta_predicted = list(map(TrackMeta.to_dict, meta_predicted))
-    return json.dumps(meta_predicted, allow_nan=True)
+    return ORJSONResponse(meta_predicted)
 
 
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}

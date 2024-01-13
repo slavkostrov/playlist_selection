@@ -68,7 +68,7 @@ DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
 
 app = FastAPI(debug=True, lifespan=model_lifespan)
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 app.secret_key = os.urandom(64)
 app.mount(
     "/static",

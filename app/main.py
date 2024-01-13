@@ -15,7 +15,7 @@ import spotipy
 from auth import SpotifyAuth
 from dependencies import DEFAULT_USER_TOKEN_COOKIE, AuthCookieDependency, ParserDependency, SpotifyAuthDependency
 from exceptions import RequiresLoginException, UnknownCookieException
-from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, Response
 from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -118,7 +118,7 @@ async def index(
     request: Request,
     auth: DependsOnAuth,
     # TODO: fix я не знаю как это делать правильно
-    playlist_link: str | None = None,
+    playlist_id: Annotated[str | None, Query(description="ID of spotify playlist")] = None,
 ):
     """Main page."""
     songs = []
@@ -128,14 +128,16 @@ async def index(
         current_user = sp.current_user()
         songs = get_user_songs(sp=sp)
 
-    if playlist_link and not playlist_link.startswith("https://open.spotify.com/playlist/"):
-        # TODO: fix
-        playlist_link = None
+    context = {
+        # TODO: тащить поменьше всего в жинжу
+        "request": request,
+        "songs": songs,
+        "current_user": current_user,
+    }
+    if playlist_id:
+        context["playlist_link"] = f"https://open.spotify.com/playlist/{playlist_id}"
 
-    return templates.TemplateResponse(
-        "home.html",
-        dict(request=request, songs=songs, current_user=current_user, playlist_link=playlist_link),
-    )
+    return templates.TemplateResponse("home.html", context)
 
 
 @app.get("/logout")
@@ -248,10 +250,8 @@ def _create_playlist(
 
 @app.post("/create")
 async def create_playlist(
-    request: Request,
     predicted_songs: Annotated[str, Form()],
     auth: DependsOnAuth,
-    parser: DependsOnParser,
 ):
     """Create playlist for user."""
     sp = auth.get_spotipy()
@@ -263,10 +263,8 @@ async def create_playlist(
         name="TEST",
         songs=recommended_songs,
     )
-    playlist_link = f"https://open.spotify.com/playlist/{playlist_id}"
-    # TODO: remove, add success alert with redirect?
-    response = await index(request=request, auth=auth, playlist_link=playlist_link)
-    return response
+    # 302 status code for POST -> redirect -> GET
+    return RedirectResponse(url=f'/?playlist_id={playlist_id}', status_code=302)
 
 
 # TODO: think about security, tokens storage etc

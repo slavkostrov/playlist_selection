@@ -119,6 +119,9 @@ async def index(
     auth: DependsOnAuth,
     # TODO: fix я не знаю как это делать правильно
     playlist_id: Annotated[str | None, Query(regex="^[a-zA-Z0-9]*$")] = None,
+    # TODO:
+    # already_selected_songs = selected_songs_json
+    # page (offset = page * limit -> get_user_songs -> merge with already_selected_songs)
 ):
     """Main page."""
     songs = []

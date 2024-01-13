@@ -229,7 +229,6 @@ async def generate_playlist(request: Request, selected_songs_json: Annotated[str
 
 def _create_playlist(
     sp: spotipy.Spotify,
-    parser: SpotifyParser,
     name: str,
     songs: list[str],
 ) -> str:
@@ -260,7 +259,6 @@ async def create_playlist(
     recommended_songs = [value["track_id"] for value in predicted_songs]
     playlist_id = _create_playlist(
         sp=sp,
-        parser=parser,
         # TODO: update name, take it from user input?
         name="TEST",
         songs=recommended_songs,

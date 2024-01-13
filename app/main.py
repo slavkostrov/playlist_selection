@@ -73,7 +73,7 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 app.secret_key = os.urandom(64)
 app.mount(
     "/static",
-    StaticFiles(directory=Path(__file__).parent / "static"),
+    StaticFiles(directory=Path(__file__).parent / "static", html=True),
     name="static"
 )
 
@@ -118,7 +118,7 @@ async def index(
     request: Request,
     auth: DependsOnAuth,
     # TODO: fix я не знаю как это делать правильно
-    playlist_id: Annotated[str | None, Query(description="ID of spotify playlist")] = None,
+    playlist_id: Annotated[str | None, Query(regex="^[a-zA-Z0-9]*$")] = None,
 ):
     """Main page."""
     songs = []

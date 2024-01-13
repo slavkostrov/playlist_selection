@@ -10,10 +10,12 @@
         <p>Generate a Spotify playlist by selecting your favorite tracks.</p>
         <h2>Select Songs:</h2>
         <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
-            {% for song in songs %}
-                <input type="checkbox" id="song_{{ loop.index }}" name="selected_songs" value="{{ song.id }}">
-                <label for="song_{{ loop.index }}">{{ song.name }} - {{ song.artist }}</label><br>
-            {% endfor %}
+            <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names.." title="Type in a name">
+            <ul id="myUL">
+                {% for song in songs %}
+                    <li><label for="song_{{ loop.index }}"><input type="checkbox" name="selected_songs" id="song_{{ loop.index }}" value="{{ song.id }}">{{ song.name }} - {{ song.artist }}</label></li>
+                {% endfor %}
+            </ul>
             <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
             <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
         </form>
@@ -23,24 +25,7 @@
                 <span class="close-btn" onclick="closeNotification()">&times;</span>
                 <p>Success! Your playlist created. <a href="#" id="notificationLink">Link to playlist</a></p>
             </div>
-
-            <script>
-                function showNotification(link) {
-                    // Display the notification
-                    document.getElementById("successNotification").style.display = "block";
-
-                    // Set the link for the notification
-                    document.getElementById("notificationLink").href = link;
-                }
-
-                function closeNotification() {
-                    // Close the notification
-                    document.getElementById("successNotification").style.display = "none";
-                }
-
-                showNotification("{{ playlist_link }}");
-
-            </script>
+            <script>showNotification("{{ playlist_link }}")</script>
         {% endif %}
         <script>
             function prepareSelectedSongs() {

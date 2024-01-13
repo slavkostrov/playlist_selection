@@ -41,19 +41,19 @@ class BasicMetric(ABC):
         Args:
             y_true: true labels
             y_pred: predicted labels (multiple for each true label)
-        
+
         Returns:
             Calculated metric value
         """
         raise NotImplementedError()
-    
+
     def __call__(self, y_true: Sequence[Any], y_pred: Sequence[Sequence[Any]]) -> float:
         """Object call method, uses self.compute.
 
         Args:
             y_true: true labels
             y_pred: predicted labels (multiple for each true label)
-        
+
         Returns:
             Calculated metric value
         """
@@ -91,7 +91,7 @@ class CorrectGenreShare(BasicMetric):
         Args:
             y_true: true genres
             y_pred: predicted genres (multiple for each true genre)
-        
+
         Returns:
             Share of correctly predicted genres
         """
@@ -130,7 +130,7 @@ class CorrectMultipleGenreShare(BasicMetric):
         Args:
             y_true: true genres
             y_pred: predicted genres (multiple for each true genres)
-        
+
         Returns:
             Share of objects, where at least on genre is correct
         """
@@ -158,13 +158,13 @@ class CorrectAlbumShare(BasicMetric):
         Args:
             y_true: true albums
             y_pred: predicted albums (multiple for each true album)
-        
+
         Returns:
             Share of correctly predicted albums
         """
         equal_mask = np.array(y_pred) == np.array(y_true).reshape(-1, 1)
         return equal_mask.mean()
-    
+
 
 class CorrectArtistShare(BasicMetric):
     """Calculates share of artist-correct answers."""
@@ -179,7 +179,7 @@ class CorrectArtistShare(BasicMetric):
         Args:
             y_true: true artists
             y_pred: predicted artists (multiple for each true artists)
-        
+
         Returns:
             Share of objects, where at least on artist is correct
         """
@@ -192,14 +192,14 @@ class CorrectArtistShare(BasicMetric):
         ]
         # Count as positive if y_true and y_pred have at least one intersection
         return np.mean(mask)
-    
+
 
 class YearMeanDiff(BasicMetric):
     """Calculates difference of track release dates."""
     def __init__(self):
         """Init method."""
         self.name = "YearMeanDiff"
-    
+
     @staticmethod
     def compute(y_true: Sequence[int], y_pred: Sequence[Sequence[int]]) -> float:
         """Calculates mean difference in years of track release dates.
@@ -207,20 +207,20 @@ class YearMeanDiff(BasicMetric):
         Args:
             y_true: true track release years
             y_pred: predicted track release years (multiple for each true year)
-        
+
         Returns:
             Mean absolute year difference
         """
         year_diff = np.array(y_pred) - np.array(y_true).reshape(-1, 1)
         return abs(year_diff).mean()
-        
+
 
 class SoundParametersDiff(BasicMetric):
     """Calculates l2 norm for sound parameters relative difference."""
     def __init__(self):
         """Init method."""
         self.name = "SoundParametersDiff"
-    
+
     @staticmethod
     def compute(y_true: Sequence[Sequence[float]], y_pred: Sequence[Sequence[Sequence[float]]]) -> float:
         """Calculates share of correct predicted artists.
@@ -228,7 +228,7 @@ class SoundParametersDiff(BasicMetric):
         Args:
             y_true: true sound parameters
             y_pred: predicted sound parameters (multiple for each input object)
-        
+
         Returns:
             L2 norm of sound parameters relative difference
         """

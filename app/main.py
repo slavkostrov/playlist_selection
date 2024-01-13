@@ -92,10 +92,10 @@ async def unknown_cookie_handler(request: Request, exc: RequiresLoginException) 
 
 def get_user_songs(sp: spotipy.Spotify) -> list[dict[str, str]]:
     """Return saved songs of current user."""
-    results = sp.current_user_saved_tracks(limit=5)
+    # cache???
+    results = sp.current_user_saved_tracks(limit=50)
     # total - total songs number
     # limit - limit of songs per 1 request
-    # TODO: add search in form
     # TODO: add pages in form
     # TODO: save all selected tracks
     songs = []

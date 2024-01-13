@@ -167,6 +167,8 @@ async def api_search(
 ) -> ORJSONResponse:
     """Endpoint for search tracks meta without Auth."""
     tracks_meta = parser.parse(song_list=song_list)
+    LOGGER.info("Search %s tracks, found %s.", len(song_list), len(tracks_meta))
+    # TODO: fix, duplicate
     tracks_meta = list(map(TrackMeta.to_dict, tracks_meta))
     return ORJSONResponse(tracks_meta)
 
@@ -181,8 +183,10 @@ async def api_generate_playlist(
     if track_id_list and song_list:
         raise HTTPException(status_code=400, detail="Only one of `song_list` or `track_id_list` must be presented.")
     elif track_id_list:
+        LOGGER.info("Predict for `track_id_list`, examples: %s.", track_id_list[:3])
         parser_kwargs = dict(track_id_list=track_id_list)
     elif song_list:
+        LOGGER.info("Predict for `song_list`, examples: %s.", song_list[:3])
         parser_kwargs = dict(song_list=song_list)
     else:
         raise HTTPException(status_code=400, detail="`song_list` or `track_id_list` must be presented.")
@@ -201,6 +205,7 @@ async def api_generate_playlist(
 async def generate_playlist(request: Request, selected_songs_json: Annotated[str, Form()], parser: DependsOnParser):
     """Generate playlists from user request."""
     selected_songs = json.loads(selected_songs_json)
+    # TODO: fix, duplicate
     track_id_list = [value["track_id"] for value in selected_songs]
     preds_tracks_json = await api_generate_playlist(parser=parser, track_id_list=track_id_list)
     preds_tracks = orjson.loads(preds_tracks_json.body)
@@ -234,10 +239,10 @@ def _create_playlist(
         user=user["id"],
         name=name,
         public=False,
+        description="Playlist created with playlist-selection app.",
     )
     LOGGER.info("Adding %s songs to %s playlist of %s user.", len(songs), playlist["id"], user["id"])
     sp.playlist_add_items(playlist_id=playlist["id"], items=songs)
-    # TODO: DEBUG, remove, add success alert with link to playlist
     return playlist["id"]
 
 
@@ -260,6 +265,7 @@ async def create_playlist(
         songs=recommended_songs,
     )
     playlist_link = f"https://open.spotify.com/playlist/{playlist_id}"
+    # TODO: remove, add success alert with redirect?
     response = await index(request=request, auth=auth, playlist_link=playlist_link)
     return response
 

@@ -7,12 +7,11 @@ from exceptions import RequiresLoginException, UnknownCookieException
 from spotipy.cache_handler import RedisCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
 
-# TODO: setup logging format etc
-LOGGER = logging.getLogger(__name__) # get_logger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 class SpotifyAuth:
     """Wrapper of authorization in Spotify.
-    
+
     Used for identify current user.
     """
 
@@ -26,7 +25,7 @@ class SpotifyAuth:
         scope: str,
     ):  # noqa: D417
         """Contstructor of auth.
-        
+
         Keyword Arguments:
         redis_db -- redis db object for token storage.
         token_key -- token key for user private token (user's uuid from cookie).
@@ -54,7 +53,7 @@ class SpotifyAuth:
         if not self.is_known_user:
             raise UnknownCookieException
         LOGGER.info("Creating access token for user with uuid %s.", self._token_key)
-        return self._sp_oauth.get_access_token(code, as_dict=False)    
+        return self._sp_oauth.get_access_token(code, as_dict=False)
 
     def get_authorize_url(self):
         """Create authorize url for current user."""

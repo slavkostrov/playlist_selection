@@ -20,25 +20,26 @@ from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from playlist_selection.models import BaseModel, KnnModel
+from playlist_selection.models import BaseModel, get_model_class
 from playlist_selection.parsing.parser import SpotifyParser
 from playlist_selection.tracks.dataset import get_meta_features
 from playlist_selection.tracks.meta import TrackMeta
 
 LOGGER = logging.getLogger(__name__)
 
-MODEL: BaseModel = KnnModel()
+MODEL: BaseModel | None = None
 
 @asynccontextmanager
 async def model_lifespan(app: FastAPI):
     """Open/close model logic."""
     global MODEL
-    MODEL.open(
+    model_class = get_model_class(name=os.environ["PLAYLIST_SELECTION_MODEL_CLASS"])
+    MODEL = model_class.open(
         bucket_name=os.environ["PLAYLIST_SELECTION_S3_BUCKET_NAME"],
         model_name=os.environ["PLAYLIST_SELECTION_MODEL_NAME"],
         profile_name=os.environ["PLAYLIST_SELECTION_S3_PROFILE_NAME"],
     )
-    LOGGER.info("Model loaded successefuly. %s %s", MODEL, MODEL.model_pipeline)
+    LOGGER.info("Model %s loaded, version: %s", model_class, os.environ["PLAYLIST_SELECTION_MODEL_NAME"])
     yield
     del MODEL
 

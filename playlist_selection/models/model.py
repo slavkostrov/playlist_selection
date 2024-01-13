@@ -42,12 +42,12 @@ class BaseModel(ABC):
         """Preproccess data."""
         return NotImplementedError()
 
-    
+
     @abstractmethod
     def open(self) -> BaseEstimator:
         """Open model."""
         return NotImplementedError()
-    
+
 
 class KnnModel(BaseModel):
     """KNN model class."""
@@ -55,13 +55,13 @@ class KnnModel(BaseModel):
     def __init__(
         self,
         k_neighbors: int = 3,
-        metric: str = "manhattan", 
+        metric: str = "manhattan",
         n_components: int = 141,
     ):
         """Initialize model.
 
         :param int k_neighbors: number of neighbors to predict
-        :param str metric: distance metric that KNN optimize 
+        :param str metric: distance metric that KNN optimize
         :param int n_components: number of components for PCA decomposition
 
         :return:
@@ -106,21 +106,21 @@ class KnnModel(BaseModel):
         """
         categorical_transformer = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
         numeric_transformer = make_pipeline(SimpleImputer(), StandardScaler())
-        
+
         preprocessor = make_column_transformer(
             (numeric_transformer,
              make_column_selector(dtype_include=np.number)),
-            (categorical_transformer, 
+            (categorical_transformer,
              make_column_selector(dtype_include=object))
         ).set_output(transform="pandas")
 
         return preprocessor
-    
+
 
     def get_pipeline(self) -> Pipeline:
         """Union all preprocessing methods in one.
 
-        :return Pipeline model_pipeline: sklearn model pipeline 
+        :return Pipeline model_pipeline: sklearn model pipeline
         """
         stages = [
             ("Prettify", FunctionTransformer(self.prettify)),
@@ -136,10 +136,10 @@ class KnnModel(BaseModel):
 
     def train(self, dataset) -> Pipeline:
         """Trains KNN model.
-        
+
         :param pd.Dataframe dataset: meta dataset from S3Dataset
-        
-        :return Pipeline model_pipeline: fitted sklearn model pipeline 
+
+        :return Pipeline model_pipeline: fitted sklearn model pipeline
         """
         self.model_pipeline = self.get_pipeline().fit(dataset)
         self.mapping = {
@@ -172,7 +172,7 @@ class KnnModel(BaseModel):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             joblib.dump(
-                value=self.model_pipeline, 
+                value=self.model_pipeline,
                 filename=f"{temp_dir}/{model_name}.pkl"
             )
             s3_client.upload_file(
@@ -181,7 +181,7 @@ class KnnModel(BaseModel):
                 Key=f"models/{model_name}/model_file.pkl"
             )
             joblib.dump(
-                value=self.mapping, 
+                value=self.mapping,
                 filename=f"{temp_dir}/mapping_file.pkl"
             )
             s3_client.upload_file(
@@ -191,12 +191,13 @@ class KnnModel(BaseModel):
             )
 
 
+    @classmethod
     def open(
-        self,
+        cls,
         bucket_name: str,
         model_name: str,
         profile_name: str | None = "default"
-    ) -> BaseEstimator: 
+    ) -> BaseEstimator:
         """Open KNN model from S3.
 
         :param bucket_name str: s3 bucket name
@@ -209,13 +210,14 @@ class KnnModel(BaseModel):
 
         s3_client = boto3.Session(profile_name=profile_name).client("s3")
 
+        obj = cls()
         with tempfile.TemporaryDirectory() as temp_dir:
             s3_client.download_file(
                 Bucket=bucket_name,
                 Key=f"models/{model_name}/model_file.pkl",
                 Filename=f"{temp_dir}/model_file.pkl"
             )
-            self.model_pipeline = joblib.load(
+            obj.model_pipeline = joblib.load(
                 filename=f"{temp_dir}/model_file.pkl"
             )
             s3_client.download_file(
@@ -223,12 +225,12 @@ class KnnModel(BaseModel):
                 Key=f"models/{model_name}/mapping_file.pkl",
                 Filename=f"{temp_dir}/mapping_file.pkl"
             )
-            self.mapping = joblib.load(
+            obj.mapping = joblib.load(
                 filename=f"{temp_dir}/mapping_file.pkl"
             )
 
-        return self.model_pipeline
-    
+        return obj
+
 
     def predict(self, dataset) -> list:
         """Predict neighbor tracks with KNN model.
@@ -245,6 +247,3 @@ class KnnModel(BaseModel):
         neighbor_tracks = list(map(self.mapping.get, np.array(track_ids).flatten()))
 
         return neighbor_tracks
-        
-
-    

@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 from playlist_selection.models import BaseModel, get_model_class
 from playlist_selection.parsing.parser import SpotifyParser
 from playlist_selection.tracks.dataset import get_meta_features
-from playlist_selection.tracks.meta import TrackMeta
+from playlist_selection.tracks.meta import Song, TrackMeta
 
 LOGGER = logging.getLogger(__name__)
 
@@ -163,7 +163,7 @@ async def callback(code: str, auth: DependsOnAuth):
 
 @app.get("/api/search")
 async def api_search(
-    song_list: list[tuple[str, str]],
+    song_list: list[Song],
     parser: DependsOnParser,
 ) -> ORJSONResponse:
     """Endpoint for search tracks meta without Auth."""
@@ -178,7 +178,7 @@ async def api_search(
 async def api_generate_playlist(
     parser: DependsOnParser,
     track_id_list: list[str] | None = None,
-    song_list: list[tuple[str, str]] | None = None,
+    song_list: list[Song] | None = None,
 ) -> ORJSONResponse:
     """API endpoint for predict tracks without auth."""
     if track_id_list and song_list:

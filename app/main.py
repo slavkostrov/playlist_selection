@@ -226,8 +226,8 @@ def _create_playlist(
     parser: SpotifyParser,
     name: str,
     songs: list[str],
-):
-    """Create playlist with given songs."""
+) -> str:
+    """Create playlist with given songs. Return id of created playlist."""
     user = sp.current_user()
     LOGGER.info("Creating new playlist for user %s with name %s.", user["id"], name)
     playlist = sp.user_playlist_create(

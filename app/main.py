@@ -161,7 +161,7 @@ async def callback(code: str, auth: DependsOnAuth):
     return response
 
 
-@app.get("/api/search")
+@app.post("/api/search")
 async def api_search(
     song_list: list[Song],
     parser: DependsOnParser,
@@ -174,7 +174,7 @@ async def api_search(
     return ORJSONResponse(tracks_meta)
 
 
-@app.get("/api/generate")
+@app.post("/api/generate")
 async def api_generate_playlist(
     parser: DependsOnParser,
     track_id_list: list[str] | None = None,

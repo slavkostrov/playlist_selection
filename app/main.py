@@ -73,7 +73,7 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 app.secret_key = os.urandom(64)
 app.mount(
     "/static",
-    StaticFiles(directory=Path(__file__).parent / "static", html=True),
+    StaticFiles(directory=Path(__file__).parent / "static"),
     name="static"
 )
 

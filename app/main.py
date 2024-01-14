@@ -197,6 +197,8 @@ async def api_generate_playlist(
     else:
         raise HTTPException(status_code=400, detail="`song_list` or `track_id_list` must be presented.")
     tracks_meta = parser.parse(**parser_kwargs)
+    if not tracks_meta:
+        raise HTTPException(status_code=400, detail="no data found for input songs.")
     features = get_meta_features(tracks_meta)
     predictions =  MODEL.predict(features)
     # TODO: в целом можно попробовать брать с S3

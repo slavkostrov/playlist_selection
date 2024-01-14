@@ -57,7 +57,7 @@ jobs:
               with:
                   yc-sa-json-credentials: '${{ secrets.VM_YC_SA_JSON_CREDENTIALS }}'
                   folder-id: '${{ secrets.FOLDER_ID }}'
-                  vm-name: playlist-selection
+                  vm-name: playlist-selection-test-v2
                   vm-service-account-id: '${{ secrets.SERVICE_ACCOUNT_ID }}'
                   vm-cores: 2
                   vm-memory: 2Gb

@@ -15,7 +15,7 @@ import spotipy
 from auth import SpotifyAuth
 from dependencies import DEFAULT_USER_TOKEN_COOKIE, AuthCookieDependency, ParserDependency, SpotifyAuthDependency
 from exceptions import RequiresLoginException, UnknownCookieException
-from fastapi import Depends, FastAPI, Form, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request, Response
 from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -37,7 +37,7 @@ async def model_lifespan(app: FastAPI):
     MODEL = model_class.open(
         bucket_name=os.environ["PLAYLIST_SELECTION_S3_BUCKET_NAME"],
         model_name=os.environ["PLAYLIST_SELECTION_MODEL_NAME"],
-        profile_name=os.environ["PLAYLIST_SELECTION_S3_PROFILE_NAME"],
+        profile_name=os.environ.get("PLAYLIST_SELECTION_S3_PROFILE_NAME"),
     )
     LOGGER.info("Model %s loaded, version: %s", model_class, os.environ["PLAYLIST_SELECTION_MODEL_NAME"])
     yield
@@ -92,10 +92,10 @@ async def unknown_cookie_handler(request: Request, exc: RequiresLoginException) 
 
 def get_user_songs(sp: spotipy.Spotify) -> list[dict[str, str]]:
     """Return saved songs of current user."""
-    results = sp.current_user_saved_tracks(limit=5)
+    # cache???
+    results = sp.current_user_saved_tracks(limit=50)
     # total - total songs number
     # limit - limit of songs per 1 request
-    # TODO: add search in form
     # TODO: add pages in form
     # TODO: save all selected tracks
     songs = []
@@ -118,7 +118,10 @@ async def index(
     request: Request,
     auth: DependsOnAuth,
     # TODO: fix я не знаю как это делать правильно
-    playlist_link: str | None = None,
+    playlist_id: Annotated[str | None, Query(regex="^[a-zA-Z0-9]*$")] = None,
+    # TODO:
+    # already_selected_songs = selected_songs_json
+    # page (offset = page * limit -> get_user_songs -> merge with already_selected_songs)
 ):
     """Main page."""
     songs = []
@@ -128,14 +131,16 @@ async def index(
         current_user = sp.current_user()
         songs = get_user_songs(sp=sp)
 
-    if playlist_link and not playlist_link.startswith("https://open.spotify.com/playlist/"):
-        # TODO: fix
-        playlist_link = None
+    context = {
+        # TODO: тащить поменьше всего в жинжу
+        "request": request,
+        "songs": songs,
+        "current_user": current_user,
+    }
+    if playlist_id:
+        context["playlist_link"] = f"https://open.spotify.com/playlist/{playlist_id}"
 
-    return templates.TemplateResponse(
-        "home.html",
-        dict(request=request, songs=songs, current_user=current_user, playlist_link=playlist_link),
-    )
+    return templates.TemplateResponse("home.html", context)
 
 
 @app.get("/logout")
@@ -192,6 +197,8 @@ async def api_generate_playlist(
     else:
         raise HTTPException(status_code=400, detail="`song_list` or `track_id_list` must be presented.")
     tracks_meta = parser.parse(**parser_kwargs)
+    if not tracks_meta:
+        raise HTTPException(status_code=400, detail="no data found for input songs.")
     features = get_meta_features(tracks_meta)
     predictions =  MODEL.predict(features)
     # TODO: в целом можно попробовать брать с S3
@@ -248,10 +255,8 @@ def _create_playlist(
 
 @app.post("/create")
 async def create_playlist(
-    request: Request,
     predicted_songs: Annotated[str, Form()],
     auth: DependsOnAuth,
-    parser: DependsOnParser,
 ):
     """Create playlist for user."""
     sp = auth.get_spotipy()
@@ -263,10 +268,8 @@ async def create_playlist(
         name="TEST",
         songs=recommended_songs,
     )
-    playlist_link = f"https://open.spotify.com/playlist/{playlist_id}"
-    # TODO: remove, add success alert with redirect?
-    response = await index(request=request, auth=auth, playlist_link=playlist_link)
-    return response
+    # 302 status code for POST -> redirect -> GET
+    return RedirectResponse(url=f'/?playlist_id={playlist_id}', status_code=302)
 
 
 # TODO: think about security, tokens storage etc

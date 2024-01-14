@@ -52,3 +52,19 @@ body {
     font-weight: bold;
     cursor: pointer;
 }
+
+ul {
+    list-style-type:none;
+  }
+
+  label {
+    border:0px solid #ccc;
+   padding:10px;
+   margin:0 0 10px;
+   display:block;
+  }
+
+  label:hover {
+   background:#eee;
+   cursor:pointer;
+  }

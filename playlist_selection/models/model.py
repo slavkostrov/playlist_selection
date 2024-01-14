@@ -168,7 +168,10 @@ class KnnModel(BaseModel):
 
         model_name = model_name or f"knn_pipeline_{datetime.date.today()}"
 
-        s3_client = boto3.Session(profile_name=profile_name).client("s3")
+        kwargs = {}
+        if profile_name:
+            kwargs[profile_name] = profile_name
+        s3_client = boto3.Session(**kwargs).client("s3")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             joblib.dump(
@@ -208,7 +211,10 @@ class KnnModel(BaseModel):
         """
         # model_name = model_name # or f"KNN_pipeline_{datetime.date.today()}.pkl" ? take latest
 
-        s3_client = boto3.Session(profile_name=profile_name).client("s3")
+        kwargs = {}
+        if profile_name:
+            kwargs[profile_name] = profile_name
+        s3_client = boto3.Session(**kwargs).client("s3")
 
         obj = cls()
         with tempfile.TemporaryDirectory() as temp_dir:

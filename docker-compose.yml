@@ -16,10 +16,12 @@ services:
       - PLAYLIST_SELECTION_S3_PROFILE_NAME=${PLAYLIST_SELECTION_S3_PROFILE_NAME}
       - PLAYLIST_SELECTION_MODEL_CLASS=${PLAYLIST_SELECTION_MODEL_CLASS}
       - PLAYLIST_SELECTION_MODEL_NAME=${PLAYLIST_SELECTION_MODEL_NAME}
+    restart: always
     volumes:
       - .aws/:/root/.aws:ro
 
   redis:
     image: "redis:latest"
+    restart: always
     ports:
       - "6379:6379"

@@ -22,20 +22,34 @@ jobs:
                   docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
                   docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
                   touch ./user-data.yaml
+            - name: Configure AWS credentials
+              id: configure-aws
+              env:
+                KEY_ID: '${{ secrets.KEY_ID }}'
+                ACCESS_KEY: '${{ secrets.ACCESS_KEY }}'
+              run: |
+                mkdir .aws
+                echo "[default]" >> .aws/config
+                echo "region = ru-central1" >> .aws/config
+                echo "[project]" >> .aws/credentials
+                echo "endpoint_url = https://storage.yandexcloud.net" >> .aws/credentials
+                echo "aws_access_key_id = $KEY_ID" >> .aws/credentials
+                echo "aws_secret_access_key = $ACCESS_KEY" >> .aws/credentials
+                echo "region = ru-central1" >> .aws/credentials
             - name: Deploy COI VM
               id: deploy-coi
               uses: yc-actions/yc-coi-deploy@v2
               env:
                   CR_REGISTRY: '${{ secrets.CR_REGISTRY }}'
                   CR_REPOSITORY: playlist-selection
-                  IMAGE_TAG: latest # '${{ github.sha }}'
-                #   PLAYLIST_SELECTION_CLIENT_ID:
-                #   PLAYLIST_SELECTION_CLIENT_SECRET:
-                #   PLAYLIST_SELECTION_CALLBACK_URL:
-                #   PLAYLIST_SELECTION_S3_BUCKET_NAME:
-                #   PLAYLIST_SELECTION_S3_PROFILE_NAME:
-                #   PLAYLIST_SELECTION_MODEL_NAME:
-                #   PLAYLIST_SELECTION_MODEL_CLASS:
+                  IMAGE_TAG: latest
+                  PLAYLIST_SELECTION_CLIENT_ID: '${{ secrets.PLAYLIST_SELECTION_CLIENT_ID }}'
+                  PLAYLIST_SELECTION_CLIENT_SECRET: '${{ secrets.PLAYLIST_SELECTION_CLIENT_SECRET }}'
+                  PLAYLIST_SELECTION_CALLBACK_URL: '${{ secrets.PLAYLIST_SELECTION_CALLBACK_URL }}'
+                  PLAYLIST_SELECTION_S3_BUCKET_NAME: '${{ secrets.PLAYLIST_SELECTION_S3_BUCKET_NAME }}'
+                  PLAYLIST_SELECTION_S3_PROFILE_NAME: 'project'
+                  PLAYLIST_SELECTION_MODEL_NAME: '${{ secrets.PLAYLIST_SELECTION_MODEL_NAME }}'
+                  PLAYLIST_SELECTION_MODEL_CLASS: '${{ secrets.PLAYLIST_SELECTION_MODEL_CLASS }}'
               with:
                   yc-sa-json-credentials: '${{ secrets.VM_YC_SA_JSON_CREDENTIALS }}'
                   folder-id: '${{ secrets.FOLDER_ID }}'
@@ -46,4 +60,4 @@ jobs:
                   vm-core-fraction: 20
                   vm-subnet-id: '${{ secrets.SUBNET_ID }}'
                   user-data-path: ./user-data.yaml
-                  docker-compose-path: ./docker-compose.yaml
+                  docker-compose-path: ./docker-compose.yml

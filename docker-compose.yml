@@ -20,6 +20,12 @@ services:
     volumes:
       - .aws/:/root/.aws:ro
 
+  bot:
+    build: ./bot
+    restart: always
+    depends_on:
+      - app
+
   redis:
     image: "redis:latest"
     restart: always

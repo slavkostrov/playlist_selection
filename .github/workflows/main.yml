@@ -1,7 +1,7 @@
 name: Pull Request
 on:
   push:
-    branches: [ master ]
+    branches: [ master, autodeploy ]
   pull_request:
 
 jobs:

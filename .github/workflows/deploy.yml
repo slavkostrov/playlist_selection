@@ -19,7 +19,7 @@ jobs:
               run: |
                   pwd
                   ls
-                  docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
+                  docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG /home/runner/work/playlist_selection/playlist_selection
                   docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
             # - name: Deploy COI VM
             #   id: deploy-coi

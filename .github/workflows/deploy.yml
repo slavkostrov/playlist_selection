@@ -11,14 +11,14 @@ jobs:
               uses: yc-actions/yc-cr-login@v1
               with:
                   yc-sa-json-credentials: '${{ secrets.YC_SA_JSON_CREDENTIALS }}'
-            # - name: 'Build, tag, and push image to Yandex Cloud Container Registry'
-            #   env:
-            #       CR_REGISTRY: crp00000000000000000
-            #       CR_REPOSITORY: my-cr-repo
-            #       IMAGE_TAG: '${{ github.sha }}'
-            #   run: |
-            #       docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
-            #       docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
+            - name: 'Build, tag, and push image to Yandex Cloud Container Registry'
+              env:
+                  CR_REGISTRY: '${{ secrets.CR_REGISTRY }}'
+                  CR_REPOSITORY: playlist-selection
+                  IMAGE_TAG: '${{ github.sha }}'
+              run: |
+                  docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
+                  docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
             # - name: Deploy COI VM
             #   id: deploy-coi
             #   uses: yc-actions/yc-coi-deploy@v2

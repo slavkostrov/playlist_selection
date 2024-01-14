@@ -50,6 +50,10 @@ jobs:
                   PLAYLIST_SELECTION_S3_PROFILE_NAME: 'project'
                   PLAYLIST_SELECTION_MODEL_NAME: '${{ secrets.PLAYLIST_SELECTION_MODEL_NAME }}'
                   PLAYLIST_SELECTION_MODEL_CLASS: '${{ secrets.PLAYLIST_SELECTION_MODEL_CLASS }}'
+                  AWS_ACCESS_KEY_ID: '${{ secrets.AWS_ACCESS_KEY_ID }}'
+                  AWS_DEFAULT_REGION: '${{ secrets.AWS_DEFAULT_REGION }}'
+                  AWS_ENDPOINT_URL: '${{ secrets.AWS_ENDPOINT_URL }}'
+                  AWS_SECRET_ACCESS_KEY: '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
               with:
                   yc-sa-json-credentials: '${{ secrets.VM_YC_SA_JSON_CREDENTIALS }}'
                   folder-id: '${{ secrets.FOLDER_ID }}'

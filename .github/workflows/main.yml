@@ -60,8 +60,20 @@ jobs:
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Login to Yandex Cloud Container Registry
+        id: login-cr
+        uses: yc-actions/yc-cr-login@v1
+        with:
+            yc-sa-json-credentials: '${{ secrets.YC_SA_JSON_CREDENTIALS }}'
       -
         name: Build and push
         uses: docker/build-push-action@v5
         with:
           push: false
+          tags: 'cr.yandex/${{ secrets.CR_REGISTRY }}/playlist-selection:${{ github.sha }}'
+      - name: 'Build, tag, and push image to Yandex Cloud Container Registry'
+        env:
+              CR_REGISTRY: '${{ secrets.CR_REGISTRY }}'
+              CR_REPOSITORY: playlist-selection
+              IMAGE_TAG: '${{ github.sha }}'
+        run: docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG

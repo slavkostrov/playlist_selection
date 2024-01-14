@@ -76,4 +76,6 @@ jobs:
               CR_REGISTRY: '${{ secrets.CR_REGISTRY }}'
               CR_REPOSITORY: playlist-selection
               IMAGE_TAG: '${{ github.sha }}'
-        run: docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG
+        run: |
+          docker build -t cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG .
+          docker push cr.yandex/$CR_REGISTRY/$CR_REPOSITORY:$IMAGE_TAG

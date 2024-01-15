@@ -6,6 +6,12 @@ from pydantic import BaseModel, Field, validator
 
 S3_SAVE_PREFIX = "tracks" # Директория на s3 куда сохраняем мету
 
+class Song(BaseModel):
+    """Basic song info."""
+
+    name: str = Field()
+    artist: str = Field()
+
 
 class TrackDetails(BaseModel):
     """Track details info."""
@@ -65,7 +71,7 @@ class TrackDetails(BaseModel):
 
 class TrackMeta(BaseModel):
     """Track meta info."""
-    
+
     album_name: str | None = Field(default=None, repr=True)
     album_id: str | None = Field(default=None, repr=False)
     album_release_date: str | None = Field(default=None, pattern=r'\d{4}-\d{2}-\d{2}', repr=False)
@@ -76,7 +82,7 @@ class TrackMeta(BaseModel):
     # TODO: Подумать как будем собирать жанры, в Spotify есть только для альбомов и очень не для всех
     genres: list[str] = Field(default_factory=lambda : ["unknown"], repr=True)
     track_details: TrackDetails = Field(default_factory=TrackDetails, repr=False)
-    
+
     @validator("album_release_date", pre=True)
     def _validate_date(cls, value):
         if re.match(r'\d{4}-\d{2}-\d{2}', value):
@@ -87,15 +93,30 @@ class TrackMeta(BaseModel):
             raise ValueError(f"Incorrect value in album_release_date: '{value}'.")
 
     @classmethod
-    def load_from_json(cls, filename: str):
+    def load_from_json(cls, filename: str, encoding: str = "utf-8"):
         """Load track meta from json file."""
-        with open(filename) as fin:
+        with open(filename, encoding=encoding) as fin:
             params = json.load(fin)
         obj = cls(**params)
         return obj
-    
+
     def get_s3_save_filename(self, prefix: str | None = None):
         """S3 save directory."""
         prefix = prefix or S3_SAVE_PREFIX
         folder_name = (self.track_name + self.artist_name[0]).replace(" ", "_")
         return f"{prefix}/{folder_name}/meta"
+
+    @property
+    def href(self) -> str:
+        """Public link to track in spotify."""
+        return f"https://open.spotify.com/track/{self.track_id}"
+
+    def to_dict(self):
+        """Transform object to dict."""
+        row = dict()
+        row.update(self.model_dump())
+        row.update(self.track_details.model_dump())
+        row["genre"] = self.genres[0] if self.genres else None
+        row["href"] = self.href
+        del row["track_details"]
+        return row

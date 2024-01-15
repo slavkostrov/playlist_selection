@@ -116,10 +116,13 @@ __pypackages__/
 celerybeat-schedule
 celerybeat.pid
 
+poetry.toml
+
 # SageMath parsed files
 *.sage.py
 
 # Environments
+.aws
 .env
 .venv
 env/

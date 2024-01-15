@@ -26,7 +26,7 @@ What tasks will be done at the first stage (exploratory data analysis and primar
 * Think about where we will store everything
 * Think about resources in general
 
-  
+
 What tasks will be done in the second stage (ML)
 * Think about audio presentation
 * You can try ready-made ones on mvp
@@ -34,7 +34,7 @@ What tasks will be done in the second stage (ML)
 * See what else is there
 * Vector search
 * See what libraries faiss, qdrant are available
-  
+
 What tasks will be done in the third stage (DL)
 * We can try to train our own (we can use any meta audio), metric learning, triplet loss
 * Think over the architecture (you can look for a ready-made one)
@@ -66,7 +66,7 @@ poetry add flask
 ```
 
 #### Linters
-  
+
 Setup pre-commit hooks:
 
 ```bash
@@ -92,9 +92,14 @@ VSCode supports `ruff` [extension](https://marketplace.visualstudio.com/items?it
 PLAYLIST_SELECTION_CLIENT_ID=
 PLAYLIST_SELECTION_CLIENT_SECRET=
 PLAYLIST_SELECTION_CALLBACK_URL=
+PLAYLIST_SELECTION_S3_BUCKET_NAME=
+PLAYLIST_SELECTION_S3_PROFILE_NAME=
+PLAYLIST_SELECTION_MODEL_NAME=
+PLAYLIST_SELECTION_MODEL_CLASS=
 ```
 2. Run docker-compose with `docker-compose up --build`
 
+Copy your AWS creds in current directory.
 
 #### Tests
 

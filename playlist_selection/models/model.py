@@ -170,7 +170,7 @@ class KnnModel(BaseModel):
 
         kwargs = {}
         if profile_name:
-            kwargs[profile_name] = profile_name
+            kwargs["profile_name"] = profile_name
         s3_client = boto3.Session(**kwargs).client("s3")
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -213,7 +213,7 @@ class KnnModel(BaseModel):
 
         kwargs = {}
         if profile_name:
-            kwargs[profile_name] = profile_name
+            kwargs["profile_name"] = profile_name
         s3_client = boto3.Session(**kwargs).client("s3")
 
         obj = cls()

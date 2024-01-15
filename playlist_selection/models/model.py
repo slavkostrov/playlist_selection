@@ -1,9 +1,9 @@
 """Module with model."""
-import contextlib
 import datetime
-import shutil
 import tempfile
+import typing as tp
 from abc import ABC, abstractmethod
+from ast import literal_eval
 
 import boto3
 import joblib
@@ -27,14 +27,11 @@ DROP_COLUMNS = [
 ]
 
 
-@contextlib.contextmanager
-def make_temp_directory():
-    """Context manager for creating temp directories."""
-    temp_dir = tempfile.mkdtemp()
-    try:
-        yield temp_dir
-    finally:
-        shutil.rmtree(temp_dir)
+def safe_eval(value: str | tp.Any) -> tp.Any:
+    """Evaluate expression if value is instance of string."""
+    if isinstance(value, str):
+        return literal_eval(value)
+    return value
 
 
 class BaseModel(ABC):
@@ -45,12 +42,12 @@ class BaseModel(ABC):
         """Preproccess data."""
         return NotImplementedError()
 
-    
+
     @abstractmethod
     def open(self) -> BaseEstimator:
         """Open model."""
         return NotImplementedError()
-    
+
 
 class KnnModel(BaseModel):
     """KNN model class."""
@@ -58,13 +55,13 @@ class KnnModel(BaseModel):
     def __init__(
         self,
         k_neighbors: int = 3,
-        metric: str = "manhattan", 
+        metric: str = "manhattan",
         n_components: int = 141,
     ):
         """Initialize model.
 
         :param int k_neighbors: number of neighbors to predict
-        :param str metric: distance metric that KNN optimize 
+        :param str metric: distance metric that KNN optimize
         :param int n_components: number of components for PCA decomposition
 
         :return:
@@ -79,13 +76,14 @@ class KnnModel(BaseModel):
 
         Useful only for meta dataset from S3Dataset.
         """
-        dataset = dataset.drop(columns=DROP_COLUMNS).dropna(subset="track_name")
+        drop_columns = list(set(dataset.columns) & set(DROP_COLUMNS))
+        dataset = dataset.drop(columns=drop_columns).dropna(subset="track_name")
         dataset.set_index("track_id", inplace=True)
 
         if dataset["genres"].dtype == "object":
-            dataset["genres"] = dataset["genres"].apply(eval)
+            dataset["genres"] = dataset["genres"].apply(safe_eval)
         if dataset["artist_name"].dtype == "object":
-            dataset["artist_name"] = dataset["artist_name"].apply(eval).apply(set)
+            dataset["artist_name"] = dataset["artist_name"].apply(safe_eval)
         else:
             dataset["artist_name"] = dataset["artist_name"].apply(set)
 
@@ -108,21 +106,21 @@ class KnnModel(BaseModel):
         """
         categorical_transformer = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
         numeric_transformer = make_pipeline(SimpleImputer(), StandardScaler())
-        
+
         preprocessor = make_column_transformer(
             (numeric_transformer,
              make_column_selector(dtype_include=np.number)),
-            (categorical_transformer, 
+            (categorical_transformer,
              make_column_selector(dtype_include=object))
         ).set_output(transform="pandas")
 
         return preprocessor
-    
+
 
     def get_pipeline(self) -> Pipeline:
         """Union all preprocessing methods in one.
 
-        :return Pipeline model_pipeline: sklearn model pipeline 
+        :return Pipeline model_pipeline: sklearn model pipeline
         """
         stages = [
             ("Prettify", FunctionTransformer(self.prettify)),
@@ -131,16 +129,17 @@ class KnnModel(BaseModel):
             ("KNN", NearestNeighbors(n_neighbors=self.k_neighbors + 1, metric=self.metric))
         ]
         model_pipeline = Pipeline(stages)
-
+        # TODO: validate
+        # model_pipeline.set_output(transform="pandas")
         return model_pipeline
 
 
     def train(self, dataset) -> Pipeline:
         """Trains KNN model.
-        
+
         :param pd.Dataframe dataset: meta dataset from S3Dataset
-        
-        :return Pipeline model_pipeline: fitted sklearn model pipeline 
+
+        :return Pipeline model_pipeline: fitted sklearn model pipeline
         """
         self.model_pipeline = self.get_pipeline().fit(dataset)
         self.mapping = {
@@ -169,11 +168,14 @@ class KnnModel(BaseModel):
 
         model_name = model_name or f"knn_pipeline_{datetime.date.today()}"
 
-        s3_client = boto3.Session(profile_name=profile_name).client("s3")
+        kwargs = {}
+        if profile_name:
+            kwargs[profile_name] = profile_name
+        s3_client = boto3.Session(**kwargs).client("s3")
 
-        with make_temp_directory() as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             joblib.dump(
-                value=self.model_pipeline, 
+                value=self.model_pipeline,
                 filename=f"{temp_dir}/{model_name}.pkl"
             )
             s3_client.upload_file(
@@ -182,7 +184,7 @@ class KnnModel(BaseModel):
                 Key=f"models/{model_name}/model_file.pkl"
             )
             joblib.dump(
-                value=self.mapping, 
+                value=self.mapping,
                 filename=f"{temp_dir}/mapping_file.pkl"
             )
             s3_client.upload_file(
@@ -192,12 +194,13 @@ class KnnModel(BaseModel):
             )
 
 
+    @classmethod
     def open(
-        self,
+        cls,
         bucket_name: str,
         model_name: str,
         profile_name: str | None = "default"
-    ) -> BaseEstimator: 
+    ) -> BaseEstimator:
         """Open KNN model from S3.
 
         :param bucket_name str: s3 bucket name
@@ -208,15 +211,19 @@ class KnnModel(BaseModel):
         """
         # model_name = model_name # or f"KNN_pipeline_{datetime.date.today()}.pkl" ? take latest
 
-        s3_client = boto3.Session(profile_name=profile_name).client("s3")
+        kwargs = {}
+        if profile_name:
+            kwargs[profile_name] = profile_name
+        s3_client = boto3.Session(**kwargs).client("s3")
 
-        with make_temp_directory() as temp_dir:
+        obj = cls()
+        with tempfile.TemporaryDirectory() as temp_dir:
             s3_client.download_file(
                 Bucket=bucket_name,
                 Key=f"models/{model_name}/model_file.pkl",
                 Filename=f"{temp_dir}/model_file.pkl"
             )
-            self.model_pipeline = joblib.load(
+            obj.model_pipeline = joblib.load(
                 filename=f"{temp_dir}/model_file.pkl"
             )
             s3_client.download_file(
@@ -224,12 +231,12 @@ class KnnModel(BaseModel):
                 Key=f"models/{model_name}/mapping_file.pkl",
                 Filename=f"{temp_dir}/mapping_file.pkl"
             )
-            self.mapping = joblib.load(
+            obj.mapping = joblib.load(
                 filename=f"{temp_dir}/mapping_file.pkl"
             )
 
-        return self.model_pipeline
-    
+        return obj
+
 
     def predict(self, dataset) -> list:
         """Predict neighbor tracks with KNN model.
@@ -246,6 +253,3 @@ class KnnModel(BaseModel):
         neighbor_tracks = list(map(self.mapping.get, np.array(track_ids).flatten()))
 
         return neighbor_tracks
-        
-
-    

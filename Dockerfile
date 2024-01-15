@@ -9,6 +9,8 @@ RUN poetry install --no-root --without dev,test
 
 WORKDIR /app
 COPY /playlist_selection /playlist_selection
+# TODO: fix, build and install
+ENV PYTHONPATH "${PYTHONPATH}:/"
 
 EXPOSE 5000
 
@@ -17,4 +19,4 @@ ENV REDIS_PORT=6379
 
 # for fast rebuild
 COPY /app /app
-CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--log-config", "logging_config.yml"]

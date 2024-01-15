@@ -1,6 +1,5 @@
 """Module with dataset implementation."""
 import itertools
-import logging
 import tempfile
 import typing as tp
 from abc import ABC, abstractmethod
@@ -11,19 +10,20 @@ import botocore
 import pandas as pd
 from tqdm.auto import tqdm
 
-from . import TrackMeta
+from ..logging_config import get_logger
 from .audio import Track
+from .meta import TrackMeta
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = get_logger(__name__)
 
 class BaseDataset(ABC):
     """Base class for all dataset classes."""
-    
+
     @abstractmethod
     def __iter__(self) -> tp.Iterator[Track]:
         """Return iterator for tracks."""
         pass
-    
+
     # TODO: remove?
     # @abstractmethod
     # def __getitem__(self, key: tp.Any) -> Track:
@@ -33,7 +33,7 @@ class BaseDataset(ABC):
 
 class S3Dataset(BaseDataset):
     """Dataset for reading data from S3."""
-    
+
     def __init__(
         self,
         s3_client: "botocore.client.S3",
@@ -41,7 +41,7 @@ class S3Dataset(BaseDataset):
         prefix: str,
     ):
         """Constructor of s3 dataset.
-        
+
         Args:
         s3_client: boto3 connection to s3;
         bucket_name: bucket name with tracks;
@@ -50,12 +50,12 @@ class S3Dataset(BaseDataset):
         self._s3_client = s3_client
         self.bucket_name = bucket_name
         self.prefix = prefix
-    
+
     def _get_pages(self) -> tp.Any:
         paginator = self._s3_client.get_paginator('list_objects_v2')
         pages = paginator.paginate(Bucket=self.bucket_name, Prefix=self.prefix)
         return pages
-    
+
     def _load_meta(self, key: str, temp_path: str) -> TrackMeta:
         self._s3_client.download_file(Filename=temp_path, Key=key, Bucket=self.bucket_name)
         meta = TrackMeta.load_from_json(temp_path)
@@ -67,7 +67,7 @@ class S3Dataset(BaseDataset):
         dataset = defaultdict(dict)
         for obj in tqdm(objects):
             key = obj["Key"]
-            
+
             # TODO: prettify
             file_name = key.split("/")[-1]
             file_format = file_name.split(".")[-1]
@@ -78,7 +78,7 @@ class S3Dataset(BaseDataset):
                 pass
             else:
                 dataset[name]["genre"] = genre
-                
+
             if file_format == "json":
                 dataset[name]["meta"] = self._load_meta(key=key, temp_path=temp_path)
             elif file_format == "mp3":
@@ -98,7 +98,7 @@ class S3Dataset(BaseDataset):
         """Return iterator for tracks."""
         if not hasattr(self, "dataset_"):
             raise RuntimeError("Scan dataset with .scan() method.")
-        
+
         for key, obj in self.dataset_.items():  # noqa: UP028
             # TODO: add audio download and transforms
             # maybe use .audio here
@@ -108,19 +108,23 @@ class S3Dataset(BaseDataset):
         """Generate pandas dataframe with dataset info."""
         if not hasattr(self, "dataset_"):
             raise RuntimeError("Scan dataset with .scan() method.")
-        
+
         data = []
         for key, obj in self.dataset_.items():
             row = dict(key=key)
-            row["genre"] = obj["genre"]
-            row["audio_path"] = obj.get("audio_path")
-            
+
             meta: TrackMeta | None = obj.get("meta")
             if meta:
-                row.update(meta.model_dump())
-                row.update(meta.track_details.model_dump())
-                del row["track_details"]
+                row.update(meta.to_dict())
+
+            row["genre"] = obj["genre"]
+            row["audio_path"] = obj.get("audio_path")
+
             data.append(row)
-            
+
         df = pd.DataFrame(data)
         return df
+
+def get_meta_features(meta_list: list[TrackMeta]) -> pd.DataFrame:
+    """Create dataframe with features from meta."""
+    return pd.DataFrame(list(map(TrackMeta.to_dict, meta_list)))

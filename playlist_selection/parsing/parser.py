@@ -1,25 +1,19 @@
 """Module with parsers."""
 import functools
-import logging
-import logging.config
 import typing as tp
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import boto3
 import numpy as np
-import spotipy as sp
-import yaml
+import spotipy
 from spotipy.exceptions import SpotifyException
 from spotipy.oauth2 import SpotifyClientCredentials
 
-from ..tracks.meta import TrackDetails, TrackMeta
+from ..logging_config import get_logger
+from ..tracks.meta import Song, TrackDetails, TrackMeta
 
-LOGGER = logging.getLogger("parser_logger")
-with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
-    logging.config.dictConfig(yaml.safe_load(fin))
-
+LOGGER = get_logger(__name__)
 
 SPOTIFY_TOKEN_REFRESH_TIME_MINUTES = 55 # In minutes
 ARTIST_TOP_TRACKS = 5 # Number of tracks to collect by artist search
@@ -28,7 +22,7 @@ PARSER_N_JOBS = 1 # Number of threads to create while parsing
 
 class BaseParser(ABC):
     """Base parser class."""
-    
+
     @abstractmethod
     def parse(self, **parser_params) -> list[TrackMeta]:
         """Parse tracks meta data."""
@@ -42,11 +36,12 @@ class BaseParser(ABC):
 
 class SpotifyParser(BaseParser):
     """Spotify parser class."""
-    
+
     def __init__(
         self,
-        client_id: str,
-        client_secret: str,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        sp: spotipy.Spotify | None = None,
         aws_access_key_id: str | None = None,
         aws_secret_access_key: str | None = None,
     ):
@@ -54,14 +49,20 @@ class SpotifyParser(BaseParser):
 
         :param str client_id: App ID
         :param str client_secret: App password
+        :param Spotify sp: spotify instance
         :param str aws_access_key_id: AWS access key
         :param str aws_secret_access_key: AWS secret key
 
         :return:
         """
-        self._auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
-        self._token_start_time = datetime.now()
-        self.sp = sp.Spotify(auth_manager=self._auth_manager)
+        if client_id and client_secret:
+            self._auth_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+            self._token_start_time = datetime.now()
+            self.sp = spotipy.Spotify(auth_manager=self._auth_manager)
+        elif sp:
+            self.sp = sp
+        else:
+            raise ValueError
 
         self._aws_access_key_id = aws_access_key_id
         self._aws_secret_access_key = aws_secret_access_key
@@ -69,11 +70,14 @@ class SpotifyParser(BaseParser):
     def refresh_token(self) -> None:
         """Refresh token in case if previous is expired.
 
-        :return: 
+        :return:
         """
+        if not hasattr(self, "_token_start_time"):
+            return
+
         if datetime.now() - self._token_start_time >= timedelta(minutes=SPOTIFY_TOKEN_REFRESH_TIME_MINUTES):
             self._token_start_time = datetime.now()
-            self.sp = sp.Spotify(auth_manager=self._auth_manager)
+            self.sp = spotipy.Spotify(auth_manager=self._auth_manager)
 
     def _get_audio_analysis_info(
         self,
@@ -92,7 +96,7 @@ class SpotifyParser(BaseParser):
             n_items = len(filtered_intervals)
             mean_duration = np.mean(list(map(lambda x: x["duration"], filtered_intervals)))
 
-            # Collect specific keys 
+            # Collect specific keys
             confidence_keys = list(filter(lambda x: x.endswith("_confidence"), response_keys))
             extra_params = {}
             for key in confidence_keys:
@@ -100,7 +104,7 @@ class SpotifyParser(BaseParser):
                 filtered_values = list(filter(lambda x: x[key] >= confidence_threshold, filtered_intervals))
                 mean_value = np.mean(list(map(lambda x: x[value_column], filtered_values)))
                 extra_params[f"{interval_name}_mean_{value_column}"] = mean_value
-            
+
             # Specific format for segments
             if interval_name == "segments":
                 mean_pitch = np.mean(list(map(lambda x: np.mean(x["pitches"]), filtered_intervals)))
@@ -200,7 +204,7 @@ class SpotifyParser(BaseParser):
         raise_not_found: bool = False,
     ) -> list[TrackMeta] | None:
         while True:
-            
+
             try:
                 self.refresh_token()
 
@@ -225,22 +229,22 @@ class SpotifyParser(BaseParser):
                     for batch_start in range(0, len(track_ids), 50):
                         track_ids_slice = track_ids[batch_start:batch_start + 50]
                         items = self.sp.tracks(tracks=track_ids_slice)["tracks"]
-            except SpotifyException:
-                raise
+            except SpotifyException as e:
+                LOGGER.error("Got exception in parser.", exc_info=e)
             else:
                 break
 
         return items
 
     def parse(
-        self, 
-        song_list: list[tuple[str, str]] | None  = None,
+        self,
+        song_list: list[Song] | None  = None,
         track_id_list: list[str] | None = None,
         raise_not_found: bool = False,
     ) -> list[TrackMeta]:
         """Parse tracks meta data.
-        
-        :param song_list list[tuple[str, str]] | None: List of [(song_name, artist), ...]
+
+        :param song_list list[Song] | None: List of songs
         :param list[str] | None track_id_list: List of spotify track ids
         :param bool raise_not_found: if True raises for not found songs
 
@@ -250,13 +254,13 @@ class SpotifyParser(BaseParser):
             self._parse_single_song,
             raise_not_found=raise_not_found,
         )
-        
+
         base_meta = []
         tracks_meta = []
         # Both song name and artist
         if song_list:
             for song in song_list:
-                base_meta.extend(executor_fn(*song))
+                base_meta.extend(executor_fn(song_name=song.name, artist_name=song.artist))
                 if len(base_meta) >= 50:
                     tracks_meta.extend(self._get_audio_features(base_meta))
                     base_meta = base_meta[50:]
@@ -288,7 +292,7 @@ class SpotifyParser(BaseParser):
         raise_wrong_type=False,
     ) -> str:
         """Save object to s3 bucket.
-        
+
         :param str schema: Transfer protocol
         :param str host: S3 host
         :param str bucket_name: Bucket name to save files to

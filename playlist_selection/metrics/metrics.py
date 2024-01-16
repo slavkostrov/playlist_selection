@@ -235,7 +235,7 @@ class SoundParametersDiff(BasicMetric):
         def l2_norm(first, second):
             first, second = np.array(first), np.array(second)
             diff = np.abs(first - second) / np.abs(np.maximum(first, second))
-            return np.sqrt(np.square(diff).sum()).mean()
+            return np.sqrt(np.nansum(np.square(diff))).mean()
 
         sound_diff = [
             [l2_norm(true_genres, pred_genres) for pred_genres in pred_genres_lst]

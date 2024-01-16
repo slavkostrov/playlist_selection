@@ -1,5 +1,9 @@
 # playlist_selection
 
+Our project available on [web page](http://51.250.97.70:5000/) and also in TG bot [@playlist_selection_bot](https://t.me/playlist_selection_bot).
+
+The application registered on the Spotify side is currently in the “development” status, so to get full access to the functionality of the service, users need to be entered in the Spotify dashboard, so if you need this, please write to the developers. At the same time, the **telegram bot is available in full**.
+
 ## Description
 
 Generating playlists based on selected tracks/Spotify profile/Ya.Muzik/Apple Music.
@@ -12,6 +16,8 @@ Generating playlists based on selected tracks/Spotify profile/Ya.Muzik/Apple Mus
 - Link to a playlist with the most similar tracks
 
 ## Example
+
+Here you can see example of out web app:
 
 ![ezgif-3-5b3fa1551f](https://github.com/slavkostrov/playlist_selection/assets/64536258/96d7be11-4e60-4779-a036-25baa1f3f23e)
 
@@ -41,13 +47,11 @@ What tasks will be done in the third stage (DL)
 * yandex ml cup 2022 find a problem, see what solutions were there (task of finding identical authors)
 What tasks would you like to do, but perhaps you won’t have time to do (link them to the necessary stages)
 
-## Examples
-
-__TODO__
-
 ## Project structure
 
-__TODO__
+* /playlist_selection - library with parser, downloader and some model tools;
+* /app - fastapi app implemntation;
+* /bot - submodule with bot implementation.
 
 ## Development
 
@@ -113,10 +117,6 @@ Coverage report:
 ```bash
 poetry run pytest --cov=src --cov-fail-under=60 tests/
 ```
-
-#### Jupyter
-
-__TODO__
 
 ## Authors
 

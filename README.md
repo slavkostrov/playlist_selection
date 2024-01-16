@@ -1,6 +1,6 @@
 # playlist_selection
 
-Our project available on [web page](http://51.250.97.70:5000/) and also in TG bot [@playlist_selection_bot](https://t.me/playlist_selection_bot).
+Our project available on [web page](http://51.250.97.70:5000/) and also in TG bot [@playlist_selection_bot](https://t.me/playlist_selection_bot) ([bot's description](https://github.com/Hul1Ganych/ps-tg-bot/tree/master)).
 
 The application registered on the Spotify side is currently in the “development” status, so to get full access to the functionality of the service, users need to be entered in the Spotify dashboard, so if you need this, please write to the developers. At the same time, the **telegram bot is available in full**.
 

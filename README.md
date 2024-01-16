@@ -120,6 +120,6 @@ poetry run pytest --cov=src --cov-fail-under=60 tests/
 
 ## Authors
 
-* Saraev Nikita
-* Ganych Daniil
-* Kostrov Vyacheslav
+* Saraev Nikita [@oldsosa](https://t.me/oldsosa)
+* Ganych Daniil [@mercyfu1_fate](https://t.me/mercyfu1_fate)
+* Kostrov Vyacheslav [@slavkostrov](https://t.me/slavkostrov)

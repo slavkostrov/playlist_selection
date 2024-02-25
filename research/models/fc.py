@@ -29,6 +29,7 @@ class TripletsFCModel(L.LightningModule):
         self,
         input_size: int,
         embedding_size: int,
+        add_bn: bool,
         optimizer_config: dict | None = None,
     ) -> None:
         """Constructor of FC model (with Lightning).
@@ -36,12 +37,14 @@ class TripletsFCModel(L.LightningModule):
         Save all params, add metric modules (accuracy and f1 for now).
 
         Args:
+            input_size
             embedding_size: size of embedding on last layer
             optimizer_config: specific config for optimizer (default None)
+            add_bn
         """
         super().__init__()
         self.save_hyperparameters()
-        self.model = Network(input_size=input_size, embedding_size=embedding_size)
+        self.model = Network(input_size=input_size, embedding_size=embedding_size, add_bn=add_bn)
         self.criterion = TripletMarginLoss()
         self.optimizer_config = optimizer_config or dict(name="torch.optim.Adam", params=dict())
 

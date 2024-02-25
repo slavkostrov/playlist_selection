@@ -11,8 +11,10 @@ class Network(nn.Module):
         super().__init__()
         self.fc = nn.Sequential(
             nn.Linear(input_size, 64),
+            *([nn.BatchNorm1d(64)] if add_bn else []),
             nn.ReLU(),
             nn.Linear(64, 128),
+            *([nn.BatchNorm1d(128)] if add_bn else []),
             nn.ReLU(),
             nn.Linear(128, embedding_size)
         )

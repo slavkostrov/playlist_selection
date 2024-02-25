@@ -1,4 +1,5 @@
 """Module with model's train."""
+import itertools
 import logging
 import logging.config
 import pathlib
@@ -118,9 +119,8 @@ def train(
                 }
             )
             trainer.fit(model=model, datamodule=datamodule)
-            embeddings = trainer.predict(model=model, datamodule=datamodule)
-
-            validation_data["embedding"] = embeddings.detach().numpy()
+            embeddings = itertools.chain.from_iterable([x.float().detach().numpy() for x in trainer.predict(model=model, datamodule=datamodule)])
+            validation_data["embedding"] = list(embeddings)
             for metric_name, value in get_similarity_metrics(validation_data, only_genre=True).items():
                 mlflow.log_metric(key=f"{metric_name}_genre", value=value)
 

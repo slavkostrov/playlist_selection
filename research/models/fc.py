@@ -56,7 +56,6 @@ class TripletsFCModel(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         """Training step of module."""
-        # split batch on images and labels
         loss = self.default_step(batch, "train")
         return {"loss": loss}
 
@@ -82,7 +81,7 @@ class TripletsFCModel(L.LightningModule):
     def forward(self, input_data):
         """Forward step of model, need to predict."""
         if isinstance(input_data, (tuple, list)) and len(input_data) == 2:
-            # FIXME: sometimes both image and label provided
+            # FIXME: sometimes both x and label provided
             # so we need to save only x
             input_data, _label = input_data
         return self.model(input_data)

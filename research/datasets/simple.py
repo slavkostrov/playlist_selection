@@ -64,9 +64,9 @@ class AudioDataModule(L.LightningDataModule):
 
         Args:
             numeric_features:
-            train_data: path to train images and labels (default None)
-            validation_data: path to validation set (default None)
-            test_data: path to test set (default None)
+            train_data
+            validation_data
+            test_data
             target_column:
             batch_size: batch size for use in dataloaders (default 50)
             num_workers: num workers fo use in dataloaders (default None, use torch default)

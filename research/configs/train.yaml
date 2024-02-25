@@ -1,0 +1,14 @@
+defaults:
+  - data: train_data
+  - model: fc
+  - optimizer: adam
+  - mlflow: default
+  - tensorboard: default
+  - callbacks: default
+  - trainer: default
+  - _self_
+params:
+  exp_name: TripletLoss # ${model.name}
+  model_filename: model
+  validation_size: 0.4
+  save_model_checkpoint: false

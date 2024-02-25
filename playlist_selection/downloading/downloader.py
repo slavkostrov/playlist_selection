@@ -1,27 +1,18 @@
 """Module with downloaders implementation."""
 import contextlib
-import logging
-import logging.config
 import shutil
 import tempfile
 import typing as tp
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import boto3
-import yaml
 from pytube import Search, YouTube
 
-Song = namedtuple("Song", ["name", "artist"])
+from ..logging_config import get_logger
+from ..tracks.meta import Song
 
-LOGGER = logging.getLogger("downloader_logger")
-with open(Path(__file__).parent.parent / "logger_config/logging_config.yml") as fin:
-    logging.config.dictConfig(yaml.safe_load(fin))
-
-
-
+LOGGER = get_logger(__name__)
 
 class BaseDownloader(ABC):
     """Base downloader class."""
@@ -29,7 +20,7 @@ class BaseDownloader(ABC):
     def search_track_audio(self, track_meta: list) -> tp.Any:
          """Search and return download link and other info."""
          raise NotImplementedError()
-    
+
     @abstractmethod
     def download_single_audio(self, output_path: str, **kwargs) -> tp.NoReturn:
         """Download audio and put it into specific filesystem."""
@@ -38,7 +29,7 @@ class BaseDownloader(ABC):
 
 class BaseAudioDumper(ABC):
     """Base dumper for audio."""
-    
+
     @abstractmethod
     def dump_audio(self, song: Song, file_path: str):
         """Save song from file_path."""
@@ -55,7 +46,7 @@ class BaseAudioDumper(ABC):
 
 class S3AudioDumper(BaseAudioDumper):
     """S3 dumper for audio."""
-    
+
     def __init__(
         self,
         schema: str,
@@ -66,7 +57,7 @@ class S3AudioDumper(BaseAudioDumper):
         aws_secret_access_key: str | None = None,
     ):
         """Constructor for S3 dumper.
-        
+
         :param schema str: s3 schema name
         :param host str: s3 host name
         :param bucket_name str: s3 bucket name
@@ -81,7 +72,7 @@ class S3AudioDumper(BaseAudioDumper):
             aws_secret_access_key=aws_secret_access_key,
             endpoint_url=f"{schema}://{host}",
         )
-        
+
     def dump_audio(self, song: Song, file_path: str):
         """Save song from file_path."""
         save_path = self.get_relative_path(song)
@@ -91,7 +82,7 @@ class S3AudioDumper(BaseAudioDumper):
             Bucket=self.bucket_name,
             Key=save_path,
         )
-        
+
 
 @contextlib.contextmanager
 def make_temp_directory():
@@ -106,14 +97,14 @@ def make_temp_directory():
 def _fix_song(song: Song | tuple):
     if not isinstance(song, Song):
         if len(song) == 2:
-            song = Song(song[1], song[0])
+            song = Song(name=song[1], artist=song[0])
         else:
             raise ValueError(f"Incorrect song format - {song}.")
     return song
 
 class YouTubeDownloader(BaseDownloader):
     """YouTube mp3 downloader class."""
-    
+
     def __init__(self, audio_dumper: BaseAudioDumper):
         """Constructor of Downloader."""
         if not isinstance(audio_dumper, BaseAudioDumper):
@@ -123,7 +114,7 @@ class YouTubeDownloader(BaseDownloader):
 
     def search_track_audio(self, song: Song | tuple) -> YouTube:
         """Search and return video metadata for mp3 download.
-        
+
         :param song Song | tp.Tuple: tuple, like (artist_name, song_name)
         :return YouTube: class with YouTube song metadata
         """

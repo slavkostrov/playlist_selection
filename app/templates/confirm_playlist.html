@@ -4,12 +4,12 @@
 {% block content %}
     <h2>Generated playlist:</h2>
     <ul>
-        {% for song in songs %}
+        {% for song in predicted_songs %}
             <li>{{ song.name }} - {{ song.artist }}</li>
         {% endfor %}
     </ul>
     <form action="{{ url_for('create_playlist') }}" method="post">
-        <input type="hidden" name="selected_songs_json" value="{{ selected_songs_json }}">
+        <input type="hidden" name="predicted_songs" value="{{ predicted_songs }}">
         <input type="submit" value="Create Playlist">
     </form>
 {% endblock %}

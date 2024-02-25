@@ -32,8 +32,8 @@ def setup_callbacks(callbacks_cfg: DictConfig) -> list[L.Callback]:
     Also model checkpointing can be enabled.
     """
     callbacks = [
-        pl.callbacks.LearningRateMonitor(logging_interval="step"),
-        pl.callbacks.DeviceStatsMonitor(),
+        # pl.callbacks.LearningRateMonitor(logging_interval="step"),
+        # pl.callbacks.DeviceStatsMonitor(),
         pl.callbacks.RichModelSummary(**callbacks_cfg.rich_model_summary.params),
     ]
 

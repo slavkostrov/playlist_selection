@@ -1,3 +1,4 @@
-name: cv_mlops.models.FCModel
+name: default
 params:
+  add_bn: True
   embedding_size: 128

@@ -7,7 +7,7 @@ from ..utils import load_object_from_path
 
 
 class Network(nn.Module):
-    def __init__(self, input_size: int, embedding_size: int):
+    def __init__(self, input_size: int, embedding_size: int, add_bn: bool):
         super().__init__()
         self.fc = nn.Sequential(
             nn.Linear(input_size, 64),

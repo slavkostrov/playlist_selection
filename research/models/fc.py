@@ -23,7 +23,7 @@ class Network(nn.Module):
         x = self.fc(x)
         return x
 
-
+# TODO: rename to FCModel, use loss from config
 class TripletsFCModel(L.LightningModule):
     """Lightning module based on _FCModel."""
 
@@ -33,6 +33,7 @@ class TripletsFCModel(L.LightningModule):
         embedding_size: int,
         add_bn: bool,
         margin: int = 1,
+        criterion: nn.Module | None = None,
         optimizer_config: dict | None = None,
     ) -> None:
         """Constructor of FC model (with Lightning).
@@ -48,7 +49,7 @@ class TripletsFCModel(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.model = Network(input_size=input_size, embedding_size=embedding_size, add_bn=add_bn)
-        self.criterion = TripletMarginLoss(margin=margin)
+        self.criterion = criterion | TripletMarginLoss(margin=margin)
         self.optimizer_config = optimizer_config or dict(name="torch.optim.Adam", params=dict())
 
     def default_step(self, batch, name: str):

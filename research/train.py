@@ -17,7 +17,7 @@ from research.metrics.similarity import get_similarity_metrics
 from .datasets import AudioDataModule
 from .datasets.utils import get_numeric_features, load_dataset_from_s3
 from .models import TripletsFCModel
-from .utils import get_current_commit, prepare_overrides
+from .utils import get_current_commit, load_object_from_path, prepare_overrides
 
 # TODO: create yaml config for logging
 logging.basicConfig(level=logging.INFO)
@@ -72,9 +72,13 @@ def train(
             data, test_size=cfg.params.validation_size, stratify=data["genre"], random_state=42,
         )
 
+        # Create loss
+        criterion = load_object_from_path(cfg.loss.name, **cfg.loss.params)
+
         # Create model
         model: L.LightningModule = TripletsFCModel(
             input_size=len(numeric_features),
+            # criterion = criterion,
             optimizer_config=cfg.optimizer,
             **cfg.model.params,
         )

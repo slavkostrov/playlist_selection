@@ -1,6 +1,7 @@
 defaults:
   - data: train_data
   - model: fc
+  - loss: triplet
   - optimizer: adam
   - mlflow: default
   - tensorboard: default

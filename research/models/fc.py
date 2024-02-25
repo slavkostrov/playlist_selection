@@ -30,6 +30,7 @@ class TripletsFCModel(L.LightningModule):
         input_size: int,
         embedding_size: int,
         add_bn: bool,
+        margin: int = 1,
         optimizer_config: dict | None = None,
     ) -> None:
         """Constructor of FC model (with Lightning).
@@ -45,7 +46,7 @@ class TripletsFCModel(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.model = Network(input_size=input_size, embedding_size=embedding_size, add_bn=add_bn)
-        self.criterion = TripletMarginLoss()
+        self.criterion = TripletMarginLoss(margin=margin)
         self.optimizer_config = optimizer_config or dict(name="torch.optim.Adam", params=dict())
 
     def default_step(self, batch, name: str):

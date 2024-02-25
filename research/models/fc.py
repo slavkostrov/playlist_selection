@@ -49,7 +49,7 @@ class TripletsFCModel(L.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.model = Network(input_size=input_size, embedding_size=embedding_size, add_bn=add_bn)
-        self.criterion = criterion | TripletMarginLoss(margin=margin)
+        self.criterion = criterion or TripletMarginLoss(margin=margin)
         self.optimizer_config = optimizer_config or dict(name="torch.optim.Adam", params=dict())
 
     def default_step(self, batch, name: str):

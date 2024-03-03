@@ -1,0 +1,5 @@
+tracking_uri: "http://178.154.204.1:8000"
+autolog:
+  enable: true
+  params:
+    log_models: false

@@ -1,0 +1,5 @@
+name: default
+params:
+  add_bn: True
+  embedding_size: 128
+  margin: 1

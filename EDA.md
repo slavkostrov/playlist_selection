@@ -77,7 +77,7 @@ To estimate how good collected features are we did several visualizations.
 
 **t-SNE**
 
-From t-SNE visualization we can see that with collected features we can separate some genres clouds, which is pretty 
+From t-SNE visualization we can see that with collected features we can separate some genres clouds, which is pretty
 good considering we are watching on only 2 components.
 
 ![image](https://github.com/slavkostrov/playlist_selection/assets/56652212/5b45b2e3-4674-4cc1-a67c-da5cda50bcd5)

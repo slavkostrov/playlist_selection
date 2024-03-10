@@ -4,8 +4,8 @@ import uuid
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 
-from app.constants import DEFAULT_USER_TOKEN_COOKIE
-from app.web.auth.exceptions import RequiresLoginException, UnknownCookieException
+from app.dependencies import DEFAULT_USER_TOKEN_COOKIE
+from app.exceptions import RequiresLoginException, UnknownCookieException
 
 
 async def requires_login_exception_handler(request: Request, exc: RequiresLoginException) -> Response:

@@ -6,7 +6,7 @@ import spotipy
 from spotipy.cache_handler import RedisCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
 
-from app.web.auth.exceptions import RequiresLoginException, UnknownCookieException
+from app.exceptions import RequiresLoginException, UnknownCookieException
 
 LOGGER = logging.getLogger(__name__)
 

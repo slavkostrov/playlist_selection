@@ -2,8 +2,7 @@
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
-from app.constants import DEFAULT_USER_TOKEN_COOKIE
-from app.dependencies import DependsOnAuth
+from app.dependencies import DEFAULT_USER_TOKEN_COOKIE, DependsOnAuth
 
 router = APIRouter(tags=["auth"])
 

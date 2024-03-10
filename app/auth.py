@@ -3,9 +3,10 @@ import logging
 
 import redis
 import spotipy
-from exceptions import RequiresLoginException, UnknownCookieException
 from spotipy.cache_handler import RedisCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
+
+from app.web.auth.exceptions import RequiresLoginException, UnknownCookieException
 
 LOGGER = logging.getLogger(__name__)
 

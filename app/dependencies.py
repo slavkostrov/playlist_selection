@@ -1,10 +1,13 @@
 """Module with dependencies of endpoints."""
+import os
 from typing import Annotated
 
 import redis
 from auth import SpotifyAuth
 from fastapi import Depends, Request
 
+from app.model import open_model
+from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 
 DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
@@ -70,3 +73,29 @@ class SpotifyAuthDependency:
             redirect_uri=self._redirect_uri,
             scope=self._scope,
         )
+
+redis_db = redis.Redis(
+    host=os.environ["REDIS_HOST"],
+    port=os.environ["REDIS_PORT"],
+    db=0,
+)
+
+# TODO: validate app args (host/port/tokens), maybe without environ usage
+auth_dependency = SpotifyAuthDependency(
+    redis_db=redis_db,
+    client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
+    client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
+    redirect_uri=os.environ["PLAYLIST_SELECTION_CALLBACK_URL"],
+    # TODO: check add playlist-read-collaborative
+    scope="user-library-read playlist-modify-private playlist-read-private",
+)
+
+parser_dependency = ParserDependency(
+    client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
+    client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
+)
+
+DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]
+DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
+DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
+DependsOnModel = Annotated[BaseModel, Depends(open_model)]

@@ -32,6 +32,11 @@ loggers:
       - default
     level: INFO
     propagate: no
+  router:
+    handlers:
+      - default
+    level: INFO
+    propagate: no
   main:
     handlers:
       - default

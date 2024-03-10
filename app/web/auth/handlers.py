@@ -4,7 +4,7 @@ import uuid
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 
-from app.dependencies import DEFAULT_USER_TOKEN_COOKIE
+from app.constants import DEFAULT_USER_TOKEN_COOKIE
 from app.web.auth.exceptions import RequiresLoginException, UnknownCookieException
 
 

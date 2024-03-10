@@ -6,11 +6,10 @@ import redis
 from auth import SpotifyAuth
 from fastapi import Depends, Request
 
+from app.constants import DEFAULT_USER_TOKEN_COOKIE
 from app.model import open_model
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
-
-DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
 
 
 class AuthCookieDependency:

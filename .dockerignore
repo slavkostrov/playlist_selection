@@ -1,0 +1,16 @@
+.git*
+.venv
+.pytest_cache
+.ruff_cache
+.cache
+.*cache
+*.md
+models/
+data/
+notebooks/
+presentations/
+research/
+bot/
+tests/
+LICENSE
+commands.py

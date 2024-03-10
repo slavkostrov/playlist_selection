@@ -5,7 +5,7 @@ RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/etc/poetry python
 ENV PATH="$PATH:/etc/poetry/bin"
 
 COPY pyproject.toml pyproject.toml
-RUN poetry install --no-root --without dev,test
+RUN poetry install --no-root --only main
 
 WORKDIR /app
 COPY /playlist_selection /playlist_selection

@@ -1,4 +1,5 @@
 import datetime
+import enum
 import uuid
 from typing import Optional
 
@@ -19,6 +20,12 @@ _SERVER_SIDE_RANDOM_UUID = sa.text("gen_random_uuid()")
 
 class Base(orm.DeclarativeBase):
     metadata = metadata
+
+
+class Status(enum.Enum):
+    PENDING = "pending"
+    RECEIVED = "received"
+    COMPLETED = "completed"
 
 
 class User(Base):
@@ -62,6 +69,7 @@ class Request(Base):
 
     uid: orm.Mapped[uuid.UUID] = orm.mapped_column(primary_key=True, server_default=_SERVER_SIDE_RANDOM_UUID)
     created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(nullable=False, server_default=sa.func.now())
+    status: orm.Mapped[Status] = orm.mapped_column(nullable=False)
 
     user_uid: orm.Mapped[uuid.UUID] = orm.mapped_column(sa.ForeignKey("user.uid"))
     user: orm.Mapped["User"] = orm.relationship(back_populates="requests")

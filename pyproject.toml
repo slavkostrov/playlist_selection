@@ -70,7 +70,7 @@ extend-select = [
   "I",   # isort
 ]
 # extend-include = ["*.ipynb"]
-extend-exclude = ["tests", "research", "notebooks"]
+extend-exclude = ["tests", "research", "notebooks", "migrations"]
 force-exclude = true
 
 [tool.ruff.pydocstyle]

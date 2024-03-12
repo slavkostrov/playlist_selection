@@ -38,7 +38,7 @@ class Playlist(Base):
 
     uid: orm.Mapped[uuid.UUID] = orm.mapped_column(primary_key=True, server_default=_SERVER_SIDE_RANDOM_UUID)
     name: orm.Mapped[str] = orm.mapped_column(nullable=False)
-    song_id: orm.Mapped[int] = orm.mapped_column(nullable=False)
+    song_id: orm.Mapped[int] = orm.mapped_column(sa.ForeignKey("song.id"))
 
     request: orm.Mapped["Request"] = orm.relationship(back_populates="playlist")
     songs: orm.Mapped[list["Song"]] = orm.relationship(back_populates="playlist")
@@ -48,8 +48,9 @@ class Song(Base):
     """Model with information about songs."""
     __tablename__ = "song"
 
-    uid: orm.Mapped[uuid.UUID] = orm.mapped_column(primary_key=True, server_default=_SERVER_SIDE_RANDOM_UUID)
-    spotify_id: orm.Mapped[int] = orm.mapped_column(nullable=False)
+    id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
+    name: orm.Mapped[str] = orm.mapped_column(nullable=False)
+    artist_name: orm.Mapped[sa.ARRAY] = orm.mapped_column(sa.ARRAY(sa.String(64)), nullable=False)
 
     playlist: orm.Mapped["Playlist"] = orm.relationship(back_populates="songs")
 

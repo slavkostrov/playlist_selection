@@ -22,6 +22,14 @@ class Base(orm.DeclarativeBase):
     metadata = metadata
 
 
+playlist_to_song_table = sa.Table(
+    "playlist_to_song",
+    Base.metadata,
+    sa.Column("playlist", sa.ForeignKey("playlist.uid")),
+    sa.Column("song", sa.ForeignKey("song.id")),
+)
+
+
 class Status(enum.Enum):
     PENDING = "pending"
     RECEIVED = "received"
@@ -48,7 +56,7 @@ class Playlist(Base):
     song_id: orm.Mapped[int] = orm.mapped_column(sa.ForeignKey("song.id"))
 
     request: orm.Mapped["Request"] = orm.relationship(back_populates="playlist")
-    songs: orm.Mapped[list["Song"]] = orm.relationship(back_populates="playlist")
+    songs: orm.Mapped[list["Song"]] = orm.relationship(secondary=playlist_to_song_table)
 
 
 class Song(Base):
@@ -58,9 +66,6 @@ class Song(Base):
     id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
     name: orm.Mapped[str] = orm.mapped_column(nullable=False)
     artist_name: orm.Mapped[sa.ARRAY] = orm.mapped_column(sa.ARRAY(sa.String(64)), nullable=False)
-
-    playlist: orm.Mapped["Playlist"] = orm.relationship(back_populates="songs")
-
 
 
 class Request(Base):

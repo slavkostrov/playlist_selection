@@ -40,7 +40,6 @@ class Playlist(Base):
     name: orm.Mapped[str] = orm.mapped_column(nullable=False)
     song_id: orm.Mapped[int] = orm.mapped_column(nullable=False)
 
-    request_uid: orm.Mapped[uuid.UUID] = orm.mapped_column(sa.ForeignKey("request.uid"))
     request: orm.Mapped["Request"] = orm.relationship(back_populates="playlist")
     songs: orm.Mapped[list["Song"]] = orm.relationship(back_populates="playlist")
 

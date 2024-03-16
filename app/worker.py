@@ -1,7 +1,8 @@
 """Celery app configuration."""
-import os
+import os  # noqa: I001
 
 from celery import Celery
+from app.tasks.predict import predict  # noqa: F401
 
 app = Celery(
     "tasks",

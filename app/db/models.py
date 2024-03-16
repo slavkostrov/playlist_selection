@@ -55,6 +55,7 @@ class Playlist(Base):
     __tablename__ = "playlist"
 
     uid: orm.Mapped[uuid.UUID] = orm.mapped_column(primary_key=True, server_default=_SERVER_SIDE_RANDOM_UUID)
+    created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(nullable=False, server_default=sa.func.now())
     name: orm.Mapped[str] = orm.mapped_column(nullable=False)
 
     request: orm.Mapped["Request"] = orm.relationship(back_populates="playlist")

@@ -6,9 +6,10 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     ports:
-      - "5000:5000"
+      - "8000:8000"
     depends_on:
       - redis
+      - worker
     environment:
       - REDIS_HOST=redis
       - PLAYLIST_SELECTION_CLIENT_ID=${PLAYLIST_SELECTION_CLIENT_ID}
@@ -21,13 +22,33 @@ services:
     restart: always
     volumes:
       - .aws/:/root/.aws:ro
-    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 5000 --log-config logging_config.yml
+    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-config logging_config.yml
 
-  bot:
-    build: ./bot
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     restart: always
     depends_on:
-      - app
+      - redis
+    command: poetry run celery -A app.worker.app worker --loglevel=INFO
+
+  flower:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "5555:5555"
+    restart: always
+    depends_on:
+      - worker
+    command: poetry run celery -A app.worker.app flower --host=0.0.0.0 --port=5555 --loglevel=INFO
+
+  # bot:
+  #   build: ./bot
+  #   restart: always
+  #   depends_on:
+  #     - app
 
   redis:
     image: "redis:latest"

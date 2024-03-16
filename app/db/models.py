@@ -36,7 +36,8 @@ class Status(enum.Enum):
     PENDING = "pending"
     RECEIVED = "received"
     COMPLETED = "completed"
-    # TODO: add failed?
+    PROCESSING = "processing"
+    FAILED = "failed"
 
 
 class User(Base):

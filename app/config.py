@@ -21,6 +21,10 @@ class Settings(pydantic_settings.BaseSettings):
         return f"postgresql+asyncpg://{self.PGUSER}:{self.PGPASSWORD.get_secret_value()}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}?ssl={self.PGSSLMODE}"
 
     @property
+    def pg_dsn_revealed_sync(self) -> str:
+        return f"postgresql+psycopg2://{self.PGUSER}:{self.PGPASSWORD.get_secret_value()}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
+
+    @property
     def pg_dsn(self) -> str:
         return f"postgresql+asyncpg://{self.PGUSER}:{self.PGPASSWORD}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
 

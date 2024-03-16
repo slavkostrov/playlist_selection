@@ -1,5 +1,4 @@
 """Endpoints description for api."""
-import asyncio
 import logging
 
 import sqlalchemy as sa
@@ -83,6 +82,11 @@ async def api_generate_playlist(
         parser_kwargs=parser_kwargs,
     )
     result: AsyncResult = predict_task.apply_async(kwargs=predict_kwargs)
+
+    # TODO: redirect на request/request_id
+    # если уже готово, то супер
+    # если нет, то говорим подождать или посмотреть потом в личном кабинете
+    # а в боте мб сделать ретраи
 
     tracks_meta = parser.parse(**parser_kwargs)
     if not tracks_meta:

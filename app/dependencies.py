@@ -1,9 +1,12 @@
 """Module with dependencies of endpoints."""
 import os
+from collections.abc import AsyncIterator
 from typing import Annotated
 
 import redis
 from fastapi import Depends, Request
+from fastapi.requests import Request
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import SpotifyAuth
 from app.model import open_model
@@ -73,6 +76,13 @@ class SpotifyAuthDependency:
             scope=self._scope,
         )
 
+
+async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
+    """Create async session."""
+    async with request.app.state.async_session.begin() as session:
+        yield session
+
+
 redis_db = redis.Redis(
     host=os.environ["REDIS_HOST"],
     port=os.environ["REDIS_PORT"],
@@ -98,3 +108,4 @@ DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]
 DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
 DependsOnModel = Annotated[BaseModel, Depends(open_model)]
+DependsOnSession = Annotated[AsyncSession, Depends(get_session)]

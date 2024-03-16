@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.api.predict.router import api_generate_playlist as api_generate_playlist
-from app.dependencies import DependsOnAuth, DependsOnModel, DependsOnParser
+from app.dependencies import DependsOnAuth, DependsOnModel, DependsOnParser, DependsOnSession
 from app.web.generate.utils import create_playlist_for_current_user, get_user_songs
 
 LOGGER = logging.getLogger(__name__)
@@ -57,13 +57,19 @@ async def generate_playlist(
     request: Request,
     selected_songs_json: Annotated[str, Form()],
     parser: DependsOnParser,
-    model: DependsOnModel
+    model: DependsOnModel,
+    session: DependsOnSession,
 ):
     """Generate playlists from user request."""
     selected_songs = json.loads(selected_songs_json)
     # TODO: fix, duplicate
     track_id_list = [value["track_id"] for value in selected_songs]
-    preds_tracks_json = await api_generate_playlist(model=model, parser=parser, track_id_list=track_id_list)
+    preds_tracks_json = await api_generate_playlist(
+        model=model,
+        parser=parser,
+        session=session,
+        track_id_list=track_id_list,
+    )
     preds_tracks = orjson.loads(preds_tracks_json.body)
     predicted_songs = [
         dict(

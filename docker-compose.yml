@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     ports:
-      - "8000:8000"
+      - "5000:5000"
     depends_on:
       - redis
       - worker
@@ -22,7 +22,7 @@ services:
     restart: always
     volumes:
       - .aws/:/root/.aws:ro
-    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-config logging_config.yml
+    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 5000 --log-config logging_config.yml
 
   worker:
     build:
@@ -31,7 +31,7 @@ services:
     restart: always
     depends_on:
       - redis
-    command: poetry run celery -A app.worker.app worker --loglevel=INFO
+    command: poetry run celery -A app.worker worker --loglevel=INFO
 
   flower:
     build:
@@ -42,7 +42,7 @@ services:
     restart: always
     depends_on:
       - worker
-    command: poetry run celery -A app.worker.app flower --host=0.0.0.0 --port=5555 --loglevel=INFO
+    command: poetry run celery -A app.worker flower --host=0.0.0.0 --port=5555 --loglevel=INFO
 
   # bot:
   #   build: ./bot

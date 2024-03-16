@@ -18,3 +18,6 @@ ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
 
 COPY /app /app
+
+# TODO: FIX!
+COPY /.env_db /app/.env_db

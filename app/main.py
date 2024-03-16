@@ -12,6 +12,7 @@ from sqlalchemy.ext import asyncio as sa_asyncio
 from app import api, web
 from app.config import get_settings
 from app.model import close_model, open_model
+from app.worker import app as celery_app
 
 LOGGER = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ async def model_lifespan(app: FastAPI):
 
 settings = get_settings()
 app = FastAPI(debug=True, lifespan=model_lifespan)
+app.celery_app = celery_app
 
 app.secret_key = os.urandom(64)
 app.mount(

@@ -74,7 +74,7 @@ class Song(Base):
     """Model with information about songs."""
     __tablename__ = "song"
 
-    id: orm.Mapped[int] = orm.mapped_column(primary_key=True)
+    id: orm.Mapped[str] = orm.mapped_column(primary_key=True)
     name: orm.Mapped[str] = orm.mapped_column(nullable=False)
     artist_name: orm.Mapped[sa.ARRAY] = orm.mapped_column(sa.ARRAY(sa.String(64)), nullable=False)
     link: orm.Mapped[str] = orm.mapped_column(nullable=False)

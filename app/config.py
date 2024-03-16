@@ -14,6 +14,7 @@ class Settings(pydantic_settings.BaseSettings):
     PGPORT: int = 5432
     PGDATABASE: str = ""
     PGSSLMODE: str = "allow"
+    PGSSLROOTCERT: str = "/etc/ssl/certs/ca-certificates.crt"
 
     @property
     def pg_dsn_revealed(self) -> str:

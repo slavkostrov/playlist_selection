@@ -7,8 +7,10 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app import api, web
+from app.config import get_settings
 from app.model import close_model, open_model
 
 LOGGER = logging.getLogger(__name__)
@@ -18,8 +20,10 @@ async def model_lifespan(app: FastAPI):
     """Open/close model logic."""
     open_model()
     yield
+    await app.state.async_engine.dispose()
     close_model()
 
+settings = get_settings()
 app = FastAPI(debug=True, lifespan=model_lifespan)
 
 app.secret_key = os.urandom(64)
@@ -31,5 +35,8 @@ app.mount(
 
 app.include_router(router=api.router)
 app.include_router(router=web.router)
+
+app.state.async_engine = sa_asyncio.create_async_engine(settings.pg_dsn_revealed, pool_pre_ping=True)
+app.state.async_session = sa_asyncio.async_sessionmaker(bind=app.state.async_engine, expire_on_commit=False)
 
 web.setup_handlers(app=app)

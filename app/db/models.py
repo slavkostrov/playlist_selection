@@ -76,7 +76,7 @@ class Song(Base):
 
     id: orm.Mapped[str] = orm.mapped_column(primary_key=True)
     name: orm.Mapped[str] = orm.mapped_column(nullable=False)
-    artist_name: orm.Mapped[sa.ARRAY] = orm.mapped_column(sa.ARRAY(sa.String(64)), nullable=False)
+    artist_name: orm.Mapped[sa.ARRAY[str]] = orm.mapped_column(sa.ARRAY(sa.String), nullable=False)
     link: orm.Mapped[str] = orm.mapped_column(nullable=False)
 
     def __repr__(self) -> str:

@@ -13,10 +13,11 @@ class Settings(pydantic_settings.BaseSettings):
     PGHOST: str = "localhost"
     PGPORT: int = 5432
     PGDATABASE: str = ""
+    PGSSLMODE: str = "allow"
 
     @property
     def pg_dsn_revealed(self) -> str:
-        return f"postgresql+asyncpg://{self.PGUSER}:{self.PGPASSWORD.get_secret_value()}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
+        return f"postgresql+asyncpg://{self.PGUSER}:{self.PGPASSWORD.get_secret_value()}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}?ssl={self.PGSSLMODE}"
 
     @property
     def pg_dsn(self) -> str:

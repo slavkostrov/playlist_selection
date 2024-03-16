@@ -1,7 +1,7 @@
+"""Models for playlist selection database."""
 import datetime
 import enum
 import uuid
-from typing import Optional
 
 import sqlalchemy as sa
 from sqlalchemy import orm
@@ -19,6 +19,7 @@ _SERVER_SIDE_RANDOM_UUID = sa.text("gen_random_uuid()")
 
 
 class Base(orm.DeclarativeBase):
+    """Base class for models."""
     metadata = metadata
 
 
@@ -31,9 +32,11 @@ playlist_to_song_table = sa.Table(
 
 
 class Status(enum.Enum):
+    """Status of request."""
     PENDING = "pending"
     RECEIVED = "received"
     COMPLETED = "completed"
+    # TODO: add failed?
 
 
 class User(Base):
@@ -44,7 +47,7 @@ class User(Base):
     created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(nullable=False, server_default=sa.func.now())
     spotify_id: orm.Mapped[int] = orm.mapped_column(nullable=False, unique=True)
 
-    requests: orm.Mapped[Optional[list["Request"]]] = orm.relationship(back_populates="user")
+    requests: orm.Mapped[list["Request"] | None] = orm.relationship(back_populates="user")
 
 
 class Playlist(Base):
@@ -78,11 +81,9 @@ class Request(Base):
     user_uid: orm.Mapped[uuid.UUID] = orm.mapped_column(sa.ForeignKey("user.uid"))
     user: orm.Mapped["User"] = orm.relationship(back_populates="requests")
 
-    playlist_uid: orm.Mapped[Optional[uuid.UUID]] = orm.mapped_column(sa.ForeignKey("playlist.uid"))
+    playlist_uid: orm.Mapped[uuid.UUID | None] = orm.mapped_column(sa.ForeignKey("playlist.uid"))
     playlist: orm.Mapped["Playlist"] = orm.relationship(back_populates="request")
 
 
-# TODO: playlist2songs? вроде добавил
-# TODO: добавить статус
 # TODO: un update ставить плейлист готов
 # TODO: обновлять статус по таймауту

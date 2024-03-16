@@ -12,7 +12,7 @@ class Settings(pydantic_settings.BaseSettings):
     PGPASSWORD: pydantic.SecretStr = "pass"  # type: ignore[assignment]
     PGHOST: str = "localhost"
     PGPORT: int = 5432
-    PGDATABASE: str = "{{ project_slug }}"
+    PGDATABASE: str = ""
 
     @property
     def pg_dsn_revealed(self) -> str:

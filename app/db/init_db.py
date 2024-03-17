@@ -1,3 +1,5 @@
+"""Initital database script."""
+import ast
 import asyncio
 import os
 
@@ -14,6 +16,7 @@ from app.db import models
 # TODO: do before start
 # TODO: move do different directory mb
 def load_songs():
+    """Load songs data from S3."""
     session = boto3.Session(profile_name="project")
     client = session.client("s3")
 
@@ -25,7 +28,7 @@ def load_songs():
 
     tracks = dataset[["track_id", "track_name", "artist_name"]].copy()
     tracks = tracks.dropna()
-    tracks["artist_name"] = tracks["artist_name"].apply(eval)
+    tracks["artist_name"] = tracks["artist_name"].apply(ast.literal_eval)
     tracks["link"] = tracks["track_id"].apply(lambda track_id: f"https://open.spotify.com/track/{track_id}")
     tracks = tracks.rename(columns={"track_id": "id", "track_name": "name"})
     tracks = tracks.dropna()
@@ -33,19 +36,18 @@ def load_songs():
 
 
 async def init_db(settings: Settings):
+    """Init script."""
     tracks = load_songs()
 
-    async def add_song(values):
-        engine = sa_asyncio.create_async_engine(settings.pg_dsn_revealed, pool_pre_ping=True)
-        session = sa_asyncio.async_sessionmaker(bind=engine, expire_on_commit=False)
-        async with session.begin() as session:
-            await session.execute(sa.insert(models.Song).values(**values))
-
-    values_list = tracks.to_dict("records")
-    await asyncio.gather(*(add_song(values) for values in values_list))
-
+    values = tracks.to_dict("records")
+    engine = sa_asyncio.create_async_engine(settings.pg_dsn_revealed, pool_pre_ping=True)
+    session = sa_asyncio.async_sessionmaker(bind=engine, expire_on_commit=False)
+    async with session.begin() as session:
+        await session.execute(sa.insert(models.Song).values(values))
+        await session.execute(sa.insert(models.User).values(spotify_id=1))
+        await session.commit()
 
 if __name__ == "__main__":
     settings = get_settings()
     os.environ["PGSSLROOTCERT"] = settings.PGSSLROOTCERT
-    init_db(settings=settings)
+    asyncio.run(init_db(settings=settings))

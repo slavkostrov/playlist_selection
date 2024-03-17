@@ -10,11 +10,11 @@ async def add_user(session: AsyncSession, uid: str, spotify_id: str):
     user = (await session.execute(sa.select(User).where(User.spotify_id == spotify_id))).scalar()
 
     if user is not None:
-        user.uid = uid
+        if user.uid != uid:
+            user.uid = uid
     else:
-        user_id = (
+        (
             await session.execute(sa.insert(User).values(uid=uid, spotify_id=spotify_id).returning(User.uid))
-        ).scalar()
+        )
 
     await session.commit()
-    return user_id

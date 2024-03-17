@@ -93,7 +93,7 @@ class Request(Base):
     created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(nullable=False, server_default=sa.func.now())
     status: orm.Mapped[Status] = orm.mapped_column(nullable=False)
 
-    user_uid: orm.Mapped[uuid.UUID] = orm.mapped_column(sa.ForeignKey("user.uid"))
+    user_uid: orm.Mapped[uuid.UUID | None] = orm.mapped_column(sa.ForeignKey("user.uid"))
     user: orm.Mapped["User"] = orm.relationship(back_populates="requests")
 
     playlist_uid: orm.Mapped[uuid.UUID | None] = orm.mapped_column(sa.ForeignKey("playlist.uid"))

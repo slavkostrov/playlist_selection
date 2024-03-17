@@ -81,6 +81,7 @@ async def api_generate_playlist(
         parser=parser,
         parser_kwargs=parser_kwargs,
     )
+
     result: AsyncResult = predict_task.apply_async(kwargs=predict_kwargs)
 
     # TODO: redirect на request/request_id

@@ -101,9 +101,18 @@ PLAYLIST_SELECTION_S3_PROFILE_NAME=
 PLAYLIST_SELECTION_MODEL_NAME=
 PLAYLIST_SELECTION_MODEL_CLASS=
 ```
-2. Run docker-compose with `docker-compose up --build`
+2. Setup .env_db with
+```.env
+PGUSER=
+PGPASSWORD=
+PGHOST=
+PGPORT=5432
+PGDATABASE=
+PGSSLMODE=
+```
+3. Run docker-compose with `docker-compose up --build`
 
-Copy your AWS creds in current directory.
+Copy your AWS creds (.aws) in current directory.
 
 #### Tests
 

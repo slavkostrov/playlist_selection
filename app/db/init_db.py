@@ -41,7 +41,7 @@ async def init_db(settings: Settings):
         async with session.begin() as session:
             await session.execute(sa.insert(models.Song).values(**values))
 
-    values_list = tracks.to_dict("records")[:100] # TODO: update limit
+    values_list = tracks.to_dict("records")
     await asyncio.gather(*(add_song(values) for values in values_list))
 
 

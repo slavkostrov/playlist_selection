@@ -46,9 +46,9 @@ class User(Base):
 
     uid: orm.Mapped[uuid.UUID] = orm.mapped_column(primary_key=True, server_default=_SERVER_SIDE_RANDOM_UUID)
     created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(nullable=False, server_default=sa.func.now())
-    spotify_id: orm.Mapped[int] = orm.mapped_column(nullable=False, unique=True)
+    spotify_id: orm.Mapped[str] = orm.mapped_column(nullable=False, unique=True)
 
-    requests: orm.Mapped[list["Request"] | None] = orm.relationship(back_populates="user")
+    requests: orm.Mapped[list["Request"] | None] = orm.relationship(back_populates="user", lazy="selectin")
 
     def __repr__(self) -> str:
         """Representation for user."""
@@ -63,8 +63,8 @@ class Playlist(Base):
     created_at: orm.Mapped[datetime.datetime] = orm.mapped_column(nullable=False, server_default=sa.func.now())
     name: orm.Mapped[str] = orm.mapped_column(nullable=False)
 
-    request: orm.Mapped["Request"] = orm.relationship(back_populates="playlist")
-    songs: orm.Mapped[list["Song"]] = orm.relationship(secondary=playlist_to_song_table)
+    request: orm.Mapped["Request"] = orm.relationship(back_populates="playlist", lazy="selectin")
+    songs: orm.Mapped[list["Song"]] = orm.relationship(secondary=playlist_to_song_table, lazy="selectin")
 
     def __repr__(self) -> str:
         """Representation for playlist."""
@@ -94,10 +94,10 @@ class Request(Base):
     status: orm.Mapped[Status] = orm.mapped_column(nullable=False)
 
     user_uid: orm.Mapped[uuid.UUID | None] = orm.mapped_column(sa.ForeignKey("user.uid"))
-    user: orm.Mapped["User"] = orm.relationship(back_populates="requests")
+    user: orm.Mapped["User"] = orm.relationship(back_populates="requests", lazy="selectin")
 
     playlist_uid: orm.Mapped[uuid.UUID | None] = orm.mapped_column(sa.ForeignKey("playlist.uid"))
-    playlist: orm.Mapped["Playlist"] = orm.relationship(back_populates="request")
+    playlist: orm.Mapped["Playlist"] = orm.relationship(back_populates="request", lazy="selectin")
 
     def __repr__(self) -> str:
         """Representation for request."""

@@ -45,25 +45,21 @@ def init_db(settings: Settings):
 
     values = tracks.to_dict("records")
     songs = [models.Song(**value) for value in values]
+    songs_ids = [song.id for song in songs]
 
     engine = sa.create_engine(settings.pg_dsn_revealed_sync)
 
     # Clear songs table.
     with Session(engine) as session:
-        session.execute(sa.delete(models.Song))
-        session.commit()
+        existing_songs = session.execute(sa.select(models.Song.id).where(models.Song.id.in_(songs_ids))).scalars()
+        existing_songs = list(existing_songs)
+
+    songs = filter(lambda song: song.id not in existing_songs, songs)
 
     # Load songs.
     with Session(engine) as session:
         session.add_all(songs)
         session.commit()
-
-    # Load temp user.
-    with Session(engine) as session:
-        user = session.execute(sa.delete(models.User).where(models.User.spotify_id == 1))
-        if user is None:
-            session.add(models.User(spotify_id=1))
-            session.commit()
 
     LOGGER.info("Initial script done.")
 

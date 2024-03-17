@@ -114,9 +114,10 @@ def predict(request_id: str, model: BaseModel, parser: SpotifyParser, parser_kwa
 
     with Session(engine) as session:
         songs = [
-            session.get(models.Song, {"id": track_id})
-            for track_id in predictions
+            session.get(models.Song, {"id": str(track_id)})
+            for track_id in filter(bool, predictions)
         ]
+        songs = [x for x in songs if x is not None]
         playlist = models.Playlist(name="test", songs=songs)
         request = session.get(models.Request, {"uid": request_id})
         request.playlist = playlist

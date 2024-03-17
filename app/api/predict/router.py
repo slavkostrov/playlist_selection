@@ -9,7 +9,6 @@ from fastapi.responses import ORJSONResponse
 from app.db import models
 from app.dependencies import DependsOnModel, DependsOnParser, DependsOnSession
 from app.tasks.predict import predict as predict_task
-from playlist_selection.tracks.dataset import get_meta_features
 from playlist_selection.tracks.meta import Song, TrackMeta
 
 LOGGER = logging.getLogger(__name__)
@@ -54,6 +53,7 @@ async def api_generate_playlist(
     session: DependsOnSession,
     track_id_list: list[str] | None = None,
     song_list: list[Song] | None = None,
+    user_uid: str | None = None,
 ) -> ORJSONResponse:
     """API endpoint for predict tracks without auth."""
     if track_id_list and song_list:
@@ -67,11 +67,16 @@ async def api_generate_playlist(
     else:
         raise HTTPException(status_code=400, detail="`song_list` or `track_id_list` must be presented.")
 
-    user = (await session.execute(sa.select(models.User).filter(models.User.spotify_id == 1))).fetchone()[0]
+    values = {"status": models.Status.RECEIVED}
+    if user_uid is not None:
+        user = (await session.execute(sa.select(models.User).filter(models.User.spotify_id == user_uid))).scalar()
+        if user is not None:
+            values["user_uid"] = user.uid
+
     request_id = (
         await (
             session
-            .execute(sa.insert(models.Request).values(status=models.Status.PENDING, user_uid=user.uid).returning(models.Request.uid)))
+            .execute(sa.insert(models.Request).values(**values).returning(models.Request.uid)))
     ).scalar()
     await session.commit()
 
@@ -89,13 +94,4 @@ async def api_generate_playlist(
     # если нет, то говорим подождать или посмотреть потом в личном кабинете
     # а в боте мб сделать ретраи
 
-    tracks_meta = parser.parse(**parser_kwargs)
-    if not tracks_meta:
-        raise HTTPException(status_code=400, detail="no data found for input songs.")
-    features = get_meta_features(tracks_meta)
-    predictions =  model.predict(features)
-    # TODO: в целом можно попробовать брать с S3
-    # но тогда кажется надо начать по другому хранить ключи
-    meta_predicted = parser.parse(track_id_list=predictions)
-    meta_predicted = list(map(TrackMeta.to_dict, meta_predicted))
-    return ORJSONResponse(meta_predicted)
+    return request_id

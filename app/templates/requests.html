@@ -1,0 +1,16 @@
+<!-- requests.html -->
+{% extends "base.html" %}
+
+{% block content %}
+    <div>
+        <strong>Status:</strong> <span>{{ status }}</span>
+    </div>
+    <div>
+        <strong>Name:</strong> <span> {{ name }} </span>
+    </div>
+    <ul>
+        {% for song in songs %}
+            <li>{{ song.name }} - {{ song.artist_name }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

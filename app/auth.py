@@ -49,10 +49,10 @@ class SpotifyAuth:
             cache_handler=cache_handler,
         )
 
-    def cache_access_token(self, code: str) -> str:
+    def cache_access_token(self, code: str, uid: str | None = None) -> str:
         """Cache access token."""
         if not self.is_known_user:
-            raise UnknownCookieException
+            raise UnknownCookieException(uid)
         LOGGER.info("Creating access token for user with uuid %s.", self._token_key)
         return self._sp_oauth.get_access_token(code, as_dict=False)
 
@@ -67,6 +67,12 @@ class SpotifyAuth:
         LOGGER.info("Remove user with uuid %s from DB.", self._token_key)
         self._redis_db.delete(self._token_key)
         return True
+
+    def get_user_id(self) -> str:
+        """Get spotify id for user."""
+        sp = self.get_spotipy()
+        user = sp.current_user()
+        return user["id"]
 
     def get_spotipy(self, raise_on_requires_login: bool = True) -> spotipy.Spotify | None:
         """Return spotipy object."""

@@ -2,7 +2,8 @@
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
-from app.dependencies import DEFAULT_USER_TOKEN_COOKIE, DependsOnAuth
+from app.dependencies import DEFAULT_USER_TOKEN_COOKIE, DependsOnAuth, DependsOnSession
+from app.web.auth.dao import add_user
 
 router = APIRouter(tags=["auth"])
 
@@ -14,10 +15,15 @@ async def login(auth: DependsOnAuth):
 
 
 @router.get("/callback/")
-async def callback(code: str, auth: DependsOnAuth):
+async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
     """Callback after spotify side login. Save token to current session and redirect to main page."""
     auth.cache_access_token(code=code)
     response = RedirectResponse("/")
+
+    spotify_id = auth.get_user_id()
+    user_uid = await add_user(session=session, spotify_id=spotify_id)
+    auth.cache_access_token(code=code, uid=user_uid)
+
     return response
 
 

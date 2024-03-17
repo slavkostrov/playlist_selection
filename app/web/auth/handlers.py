@@ -15,7 +15,10 @@ async def requires_login_exception_handler(request: Request, exc: RequiresLoginE
 async def unknown_cookie_handler(request: Request, exc: UnknownCookieException) -> Response:
     """Handler for unknown cookie exception, used for set cookie."""
     redirect_response = RedirectResponse(url=request.url)
-    user_uuid = uuid.uuid4()
+    if len(exc.args) and exc.args[0]:
+        user_uuid = exc.args[0]
+    else:
+        user_uuid = uuid.uuid4()
     redirect_response.set_cookie(key=DEFAULT_USER_TOKEN_COOKIE, value=user_uuid)
     return redirect_response
 

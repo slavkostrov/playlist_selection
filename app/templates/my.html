@@ -1,0 +1,9 @@
+<!-- my.html -->
+{% extends "base.html" %}
+
+{% block content %}
+        {% for request in requests %}
+            <li><a href="{{ url_for('my_request', request_id=request.uid) }}"> {{ request.name }} </a> - {{ request.created_at }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

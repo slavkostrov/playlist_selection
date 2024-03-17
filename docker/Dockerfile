@@ -20,6 +20,3 @@ ENV REDIS_PORT=6379
 COPY alembic.ini /app/alembic.ini
 COPY migrations /app/migrations
 COPY /app /app
-
-# TODO: FIX!
-COPY /.env_db /app/.env_db

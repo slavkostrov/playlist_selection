@@ -107,11 +107,11 @@ async def get_request(request_id: uuid.UUID, session: DependsOnSession):
         "status": request.status.value,
     }
 
-    if result["status"] == "COMPLETED":
+    if result["status"] == "completed":
         songs = []
         for song in request.playlist.songs:
             songs.append({
-                "name": song.name,
+                "track_name": song.name,
                 "artist_name": song.artist_name,
                 "track_id": song.id,
                 "href": song.link,

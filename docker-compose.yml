@@ -71,11 +71,13 @@ services:
       - worker
     command: poetry run celery -A app.worker flower --host=0.0.0.0 --port=5555 --loglevel=INFO
 
-  # bot:
-  #   build: ./bot
-  #   restart: always
-  #   depends_on:
-  #     - app
+  bot:
+    build: ./bot
+    restart: always
+    environment:
+      - SERVICE_URI=http://app:5000
+    depends_on:
+      - app
 
   redis:
     image: "redis:latest"

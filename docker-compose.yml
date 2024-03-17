@@ -1,6 +1,20 @@
 version: "3.8"
 
 services:
+
+  init_db:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command:
+      - bash
+      - "-c"
+      - >
+        poetry run python -m alembic upgrade head &&
+        poetry run python db/init_db.py
+    volumes:
+      - .aws/:/root/.aws:ro
+
   app:
     build:
       context: .
@@ -8,8 +22,12 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - redis
-      - worker
+      init_db:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      worker:
+        condition: service_started
     environment:
       - REDIS_HOST=redis
       - PLAYLIST_SELECTION_CLIENT_ID=${PLAYLIST_SELECTION_CLIENT_ID}

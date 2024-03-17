@@ -60,8 +60,10 @@ def init_db(settings: Settings):
 
     # Load temp user.
     with Session(engine) as session:
-        session.add(models.User(spotify_id=1))
-        session.commit()
+        user = session.execute(sa.delete(models.User).where(models.User.spotify_id == 1))
+        if user is None:
+            session.add(models.User(spotify_id=1))
+            session.commit()
 
     LOGGER.info("Initial script done.")
 

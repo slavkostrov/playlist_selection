@@ -1,3 +1,4 @@
+"""Predict task for Celery."""
 import logging
 from typing import Any
 
@@ -111,13 +112,10 @@ def predict(request_id: str, model: BaseModel, parser: SpotifyParser, parser_kwa
     features = get_meta_features(tracks_meta)
     predictions =  model.predict(features)
 
-    # TODO: delete after store all ids in DB
-    meta_predicted = parser.parse(track_id_list=predictions)
-
     with Session(engine) as session:
         songs = [
-            session.get(models.Song, {"id": meta.track_id})
-            or create_song_from_meta(meta) for meta in meta_predicted
+            session.get(models.Song, {"id": track_id})
+            for track_id in predictions
         ]
         playlist = models.Playlist(name="test", songs=songs)
         request = session.get(models.Request, {"uid": request_id})
@@ -125,4 +123,4 @@ def predict(request_id: str, model: BaseModel, parser: SpotifyParser, parser_kwa
         request.status = models.Status.COMPLETED
         session.commit()
 
-    return meta_predicted
+    return predictions

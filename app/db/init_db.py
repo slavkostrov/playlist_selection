@@ -1,15 +1,14 @@
 """Initital database script."""
 import ast
-import asyncio
 import logging
 import os
 
 import boto3
 import pandas as pd
 import sqlalchemy as sa
-from sqlalchemy.ext import asyncio as sa_asyncio
+from sqlalchemy.orm import Session
 
-from app.config import Settings, get_settings
+from app.config import Settings
 from app.db import models
 
 LOGGER = logging.getLogger(__name__)
@@ -39,20 +38,34 @@ def load_songs():
     return tracks
 
 
-async def init_db(settings: Settings):
+def init_db(settings: Settings):
     """Init script."""
     LOGGER.info("Started init_db script.")
     tracks = load_songs()
+
     values = tracks.to_dict("records")
-    engine = sa_asyncio.create_async_engine(settings.pg_dsn_revealed, pool_pre_ping=True)
-    session = sa_asyncio.async_sessionmaker(bind=engine, expire_on_commit=False)
-    async with session.begin() as session:
-        await session.execute(sa.insert(models.Song).values(values))
-        await session.execute(sa.insert(models.User).values(spotify_id=1))
-        await session.commit()
+    songs = [models.Song(**value) for value in values]
+
+    engine = sa.create_engine(settings.pg_dsn_revealed_sync)
+
+    # Clear songs table.
+    with Session(engine) as session:
+        session.execute(sa.delete(models.Song))
+        session.commit()
+
+    # Load songs.
+    with Session(engine) as session:
+        session.add_all(songs)
+        session.commit()
+
+    # Load temp user.
+    with Session(engine) as session:
+        session.add(models.User(spotify_id=1))
+        session.commit()
+
     LOGGER.info("Initial script done.")
 
 if __name__ == "__main__":
-    settings = get_settings()
+    settings = Settings()
     os.environ["PGSSLROOTCERT"] = settings.PGSSLROOTCERT
-    asyncio.run(init_db(settings=settings))
+    init_db(settings=settings)

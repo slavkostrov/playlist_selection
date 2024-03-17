@@ -67,12 +67,7 @@ async def api_generate_playlist(
     else:
         raise HTTPException(status_code=400, detail="`song_list` or `track_id_list` must be presented.")
 
-    values = {"status": models.Status.RECEIVED}
-    if user_uid is not None:
-        user = (await session.execute(sa.select(models.User).filter(models.User.spotify_id == user_uid))).scalar()
-        if user is not None:
-            values["user_uid"] = user.uid
-
+    values = {"status": models.Status.RECEIVED, "user_uid": user_uid}
     request_id = (
         await (
             session
@@ -87,7 +82,7 @@ async def api_generate_playlist(
         parser_kwargs=parser_kwargs,
     )
 
-    result: AsyncResult = predict_task.apply_async(kwargs=predict_kwargs)
+    _: AsyncResult = predict_task.apply_async(kwargs=predict_kwargs)
 
     # TODO: redirect на request/request_id
     # если уже готово, то супер

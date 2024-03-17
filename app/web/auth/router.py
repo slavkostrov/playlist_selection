@@ -21,8 +21,11 @@ async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
     response = RedirectResponse("/")
 
     spotify_id = auth.get_user_id()
-    user_uid = await add_user(session=session, spotify_id=spotify_id)
-    auth.cache_access_token(code=code, uid=user_uid)
+    await add_user(
+        session=session,
+        uid=auth.token_key,
+        spotify_id=spotify_id,
+    )
 
     return response
 

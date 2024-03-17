@@ -60,19 +60,18 @@ async def generate_playlist(
     parser: DependsOnParser,
     model: DependsOnModel,
     session: DependsOnSession,
-    auth: DependsOnAuth,
     user_uid: DependsOnCookie,
 ):
     """Generate playlists from user request."""
     selected_songs = json.loads(selected_songs_json)
     track_id_list = [value["track_id"] for value in selected_songs]
-    user = auth.get_spotipy().current_user()
     request_id = await api_generate_playlist(
         model=model,
         parser=parser,
         session=session,
         track_id_list=track_id_list,
-        user_uid=user["id"], #user_uid,
+        user_uid=user_uid,
+        # user_uid=user["id"], #user_uid,
     )
     return RedirectResponse(url=f'/requests/{request_id}', status_code=302)
 

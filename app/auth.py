@@ -49,6 +49,11 @@ class SpotifyAuth:
             cache_handler=cache_handler,
         )
 
+    @property
+    def token_key(self):
+        """Return token key."""
+        return self._token_key
+
     def cache_access_token(self, code: str, uid: str | None = None) -> str:
         """Cache access token."""
         if not self.is_known_user:

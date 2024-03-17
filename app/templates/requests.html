@@ -13,4 +13,8 @@
             <li>{{ song.name }} - {{ song.artist_name }}</li>
         {% endfor %}
     </ul>
+    <form action="{{ url_for('create_playlist') }}" method="post">
+        <input type="hidden" name="predicted_songs" value="{{ songs }}">
+        <input type="submit" value="Create Playlist">
+    </form>
 {% endblock %}

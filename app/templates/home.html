@@ -8,6 +8,7 @@
     {% endif %}
     {% if songs %}
         <p>Generate a Spotify playlist by selecting your favorite tracks.</p>
+        <a href="{{ url_for('my') }}">My Requests</a>
         <h2>Select Songs:</h2>
         <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
             <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names.." title="Type in a name">

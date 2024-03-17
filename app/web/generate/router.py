@@ -84,8 +84,7 @@ async def create_playlist(
 ):
     """Create playlist for user."""
     sp = auth.get_spotipy()
-    predicted_songs = literal_eval(predicted_songs)
-    recommended_songs = [value["track_id"] for value in predicted_songs]
+    recommended_songs = [value["track_id"] for value in literal_eval(predicted_songs)]
     playlist_id = create_playlist_for_current_user(
         sp=sp,
         # TODO: update name, take it from user input?
@@ -114,6 +113,7 @@ async def get_request(request_id: uuid.UUID, session: DependsOnSession):
             songs.append({
                 "name": song.name,
                 "artist_name": song.artist_name,
+                "track_id": song.id,
                 "href": song.link,
             })
         result["songs"] =  songs
@@ -123,6 +123,7 @@ async def get_request(request_id: uuid.UUID, session: DependsOnSession):
 
 @router.get("/my")
 async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
+    """Endpoint with my requests."""
     user_id = auth.get_user_id()
     user = (await session.execute(sa.select(models.User).where(models.User.spotify_id == user_id))).scalar()
 
@@ -138,6 +139,7 @@ async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
 
 @router.get("/my/requests/{request_id}")
 async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAuth, session: DependsOnSession):
+    """Endpoint with my request."""
     request = await session.get(models.Request, {"uid": request_id})
 
     user_id = auth.get_user_id()
@@ -151,7 +153,15 @@ async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAu
 
     if request.playlist is not None:
         data["name"] = request.playlist.name
-        data["songs"] = request.playlist.songs
+        songs = []
+        for song in request.playlist.songs:
+            songs.append({
+                "name": song.name,
+                "artist_name": song.artist_name,
+                "track_id": song.id,
+                "href": song.link,
+            })
+        data["songs"] = songs
 
     return templates.TemplateResponse("requests.html", data)
 

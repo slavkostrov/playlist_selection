@@ -5,7 +5,6 @@ from typing import Annotated
 
 import redis
 from fastapi import Depends, Request
-from fastapi.requests import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import SpotifyAuth

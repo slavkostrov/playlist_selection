@@ -1,11 +1,13 @@
 """Celery app configuration."""
-import os
-
 from celery import Celery
+
+from app.config import get_settings
+
+settings = get_settings()
 
 app = Celery(
     "tasks",
-    broker=f"redis://{os.environ['REDIS_HOST']}:{os.environ['REDIS_PORT']}/0",
+    broker=f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}/0",
     include=["app.tasks"],
 )
 

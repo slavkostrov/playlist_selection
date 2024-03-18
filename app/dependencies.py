@@ -1,5 +1,4 @@
 """Module with dependencies of endpoints."""
-import os
 from collections.abc import AsyncIterator
 from typing import Annotated
 
@@ -8,11 +7,13 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import SpotifyAuth
+from app.config import get_settings
 from app.model import open_model
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 
 DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
+settings = get_settings()
 
 class AuthCookieDependency:
     """Need cookie dependecy."""
@@ -83,24 +84,24 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
 
 
 redis_db = redis.Redis(
-    host=os.environ["REDIS_HOST"],
-    port=os.environ["REDIS_PORT"],
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
     db=0,
 )
 
 # TODO: validate app args (host/port/tokens), maybe without environ usage
 auth_dependency = SpotifyAuthDependency(
     redis_db=redis_db,
-    client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
-    client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
-    redirect_uri=os.environ["PLAYLIST_SELECTION_CALLBACK_URL"],
+    client_id=settings.PLAYLIST_SELECTION_CLIENT_ID,
+    client_secret=settings.PLAYLIST_SELECTION_CLIENT_SECRET,
+    redirect_uri=settings.PLAYLIST_SELECTION_CALLBACK_URL,
     # TODO: check add playlist-read-collaborative
     scope="user-library-read playlist-modify-private playlist-read-private",
 )
 
 parser_dependency = ParserDependency(
-    client_id=os.environ["PLAYLIST_SELECTION_CLIENT_ID"],
-    client_secret=os.environ["PLAYLIST_SELECTION_CLIENT_SECRET"],
+    client_id=settings.PLAYLIST_SELECTION_CLIENT_ID,
+    client_secret=settings.PLAYLIST_SELECTION_CLIENT_SECRET,
 )
 
 DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]

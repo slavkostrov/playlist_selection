@@ -75,6 +75,7 @@ docs/_build/
 target/
 
 # Virtual environment
+.env
 .venv/
 venv/
 
@@ -98,10 +99,14 @@ notebooks/
 presentations/
 research/
 tests/
+.aws/
+bot/.flake8
 
 # Markdowns
-*.md
 **/README
+EDA.md
+app/README.md
+bot/README.md
 
 # LICENSE
 LICENSE

@@ -34,8 +34,8 @@ class Settings(pydantic_settings.BaseSettings):
         return f"postgresql+asyncpg://{self.PGUSER}:{self.PGPASSWORD}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
 
     # S3
-    PLAYLIST_SELECTION_S3_BUCKET_NAME: str = "bucket"
-    PLAYLIST_SELECTION_S3_PROFILE_NAME: str = "default"
+    PLAYLIST_SELECTION_S3_BUCKET_NAME: str
+    PLAYLIST_SELECTION_S3_PROFILE_NAME: str
     PLAYLIST_SELECTION_S3_ENDPOINT_URL: str = "http://storage.yandexcloud.net"
 
     # Redis
@@ -51,7 +51,7 @@ class Settings(pydantic_settings.BaseSettings):
     PLAYLIST_SELECTION_CLIENT_SECRET: pydantic.SecretStr
 
     # Playlist Selection app
-    PLAYLIST_SELECTION_CALLBACK_URL: str = "http://127.0.0.1:5000/callback/"
+    PLAYLIST_SELECTION_CALLBACK_URL: str
 
     # Playlist Selection bot
     BOT_TOKEN: pydantic.SecretStr

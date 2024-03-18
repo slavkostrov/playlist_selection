@@ -7,7 +7,7 @@ import pydantic_settings
 
 class Settings(pydantic_settings.BaseSettings):
     """Config class for application."""
-    model_config = pydantic_settings.SettingsConfigDict(env_file=".env_db", env_file_encoding="utf-8")
+    model_config = pydantic_settings.SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     # Postgres
     PGUSER: str = "user"

@@ -16,10 +16,10 @@ LOGGER = logging.getLogger(__name__)
 # TODO: refactor
 # TODO: do before start
 # TODO: move do different directory mb
-def load_songs():
+def load_songs(settings: Settings):
     """Load songs data from S3."""
     LOGGER.info("Start loading songs data from S3.")
-    session = boto3.Session(profile_name="project")
+    session = boto3.Session(profile_name=settings.PLAYLIST_SELECTION_S3_PROFILE_NAME)
     client = session.client("s3")
 
     bucket = "hse-project-playlist-selection"
@@ -41,7 +41,7 @@ def load_songs():
 def init_db(settings: Settings):
     """Init script."""
     LOGGER.info("Started init_db script.")
-    tracks = load_songs()
+    tracks = load_songs(settings)
 
     values = tracks.to_dict("records")
     songs = [models.Song(**value) for value in values]

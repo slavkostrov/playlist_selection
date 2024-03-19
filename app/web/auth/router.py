@@ -16,7 +16,10 @@ async def login(auth: DependsOnAuth):
 
 @router.get("/callback/")
 async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
-    """Callback after spotify side login. Save token to current session and redirect to main page."""
+    """Callback after spotify side login. Save token to current session and redirect to main page.
+
+    - **code**: user's token of Spotify session
+    """
     auth.cache_access_token(code=code)
     response = RedirectResponse("/")
 

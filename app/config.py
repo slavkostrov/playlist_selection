@@ -7,7 +7,9 @@ import pydantic_settings
 
 class Settings(pydantic_settings.BaseSettings):
     """Config class for application."""
-    model_config = pydantic_settings.SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = pydantic_settings.SettingsConfigDict(
+        env_file=".env", env_prefix="PLAYLIST_SELECTION_", env_file_encoding="utf-8"
+    )
 
     # Postgres
     PGUSER: str = "user"
@@ -34,24 +36,24 @@ class Settings(pydantic_settings.BaseSettings):
         return f"postgresql+asyncpg://{self.PGUSER}:{self.PGPASSWORD}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
 
     # S3
-    PLAYLIST_SELECTION_S3_BUCKET_NAME: str
-    PLAYLIST_SELECTION_S3_PROFILE_NAME: str
-    PLAYLIST_SELECTION_S3_ENDPOINT_URL: str = "http://storage.yandexcloud.net"
+    S3_BUCKET_NAME: str
+    S3_PROFILE_NAME: str
+    S3_ENDPOINT_URL: str = "http://storage.yandexcloud.net"
 
     # Redis
     REDIS_HOST: str
     REDIS_PORT: str
 
     # Model
-    PLAYLIST_SELECTION_MODEL_NAME: str
-    PLAYLIST_SELECTION_MODEL_CLASS: str
+    MODEL_NAME: str
+    MODEL_CLASS: str
 
     # Spotify credentials
-    PLAYLIST_SELECTION_CLIENT_ID: pydantic.SecretStr
-    PLAYLIST_SELECTION_CLIENT_SECRET: pydantic.SecretStr
+    CLIENT_ID: pydantic.SecretStr
+    CLIENT_SECRET: pydantic.SecretStr
 
     # Playlist Selection app
-    PLAYLIST_SELECTION_CALLBACK_URL: str
+    CALLBACK_URL: str
 
     # Playlist Selection bot
     BOT_TOKEN: pydantic.SecretStr

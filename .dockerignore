@@ -99,14 +99,13 @@ notebooks/
 presentations/
 research/
 tests/
+bot/
 .aws/
-bot/.flake8
 
 # Markdowns
 **/README
 EDA.md
 app/README.md
-bot/README.md
 
 # LICENSE
 LICENSE

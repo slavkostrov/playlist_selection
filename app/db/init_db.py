@@ -19,7 +19,7 @@ LOGGER = logging.getLogger(__name__)
 def load_songs(settings: Settings):
     """Load songs data from S3."""
     LOGGER.info("Start loading songs data from S3.")
-    session = boto3.Session(profile_name=settings.PLAYLIST_SELECTION_S3_PROFILE_NAME)
+    session = boto3.Session(profile_name=settings.S3_PROFILE_NAME)
     client = session.client("s3")
 
     bucket = "hse-project-playlist-selection"

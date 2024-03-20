@@ -13,7 +13,6 @@ from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 
 DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
-settings = get_settings()
 
 class AuthCookieDependency:
     """Need cookie dependecy."""
@@ -82,7 +81,7 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     async with request.app.state.async_session.begin() as session:
         yield session
 
-
+settings = get_settings()
 redis_db = redis.Redis(
     host=settings.REDIS_HOST,
     port=settings.REDIS_PORT,

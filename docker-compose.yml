@@ -75,7 +75,7 @@ services:
     restart: always
     environment:
       - SERVICE_URI=http://app:5000
-      - BOT_TOKEN=${PLAYLIST_SELECTION_BOT_TOKEN}
+      - BOT_TOKEN=${BOT_TOKEN}
     depends_on:
       - app
 

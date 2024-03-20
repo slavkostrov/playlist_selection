@@ -12,12 +12,12 @@ class Settings(pydantic_settings.BaseSettings):
     )
 
     # Postgres
-    PGUSER: str = "user"
-    PGPASSWORD: pydantic.SecretStr = "pass"  # type: ignore[assignment]
-    PGHOST: str = "localhost"
+    PGUSER: str
+    PGPASSWORD: pydantic.SecretStr # type: ignore[assignment]
+    PGHOST: str
     PGPORT: int = 5432
-    PGDATABASE: str = ""
-    PGSSLMODE: str = "allow"
+    PGDATABASE: str
+    PGSSLMODE: str
     PGSSLROOTCERT: str = "/etc/ssl/certs/ca-certificates.crt"
 
     @property
@@ -38,11 +38,11 @@ class Settings(pydantic_settings.BaseSettings):
     # S3
     S3_BUCKET_NAME: str
     S3_PROFILE_NAME: str
-    S3_ENDPOINT_URL: str = "http://storage.yandexcloud.net"
+    S3_ENDPOINT_URL: str
 
     # Redis
     REDIS_HOST: str
-    REDIS_PORT: str
+    REDIS_PORT: str = 6379
 
     # Model
     MODEL_NAME: str
@@ -54,9 +54,6 @@ class Settings(pydantic_settings.BaseSettings):
 
     # Playlist Selection app
     CALLBACK_URL: str
-
-    # Playlist Selection bot
-    BOT_TOKEN: pydantic.SecretStr
 
 @functools.lru_cache
 def get_settings() -> Settings:

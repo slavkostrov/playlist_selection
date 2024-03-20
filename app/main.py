@@ -26,7 +26,6 @@ async def model_lifespan(app: FastAPI):
 
 app = FastAPI(debug=True, lifespan=model_lifespan)
 app.celery_app = celery_app
-app.state.settings = get_settings()
 
 app.secret_key = os.urandom(64)
 app.mount(
@@ -38,6 +37,7 @@ app.mount(
 app.include_router(router=api.router)
 app.include_router(router=web.router)
 
+app.state.settings = get_settings()
 app.state.async_engine = sa_asyncio.create_async_engine(app.state.settings.pg_dsn_revealed, pool_pre_ping=True)
 app.state.async_session = sa_asyncio.async_sessionmaker(bind=app.state.async_engine, expire_on_commit=False)
 

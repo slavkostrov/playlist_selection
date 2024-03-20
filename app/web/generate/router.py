@@ -35,7 +35,7 @@ async def index(
 ):
     """Main page.
 
-    - **playlist_id**: Spotify playlist id
+    - **playlist_id**: Spotify playlist id of created playlist
     """
     songs = []
     current_user = None
@@ -68,7 +68,6 @@ async def generate_playlist(
     """Generate playlists from user request.
 
     - **selected_songs_json**: json of songs selected by users
-    - **settings**: Settings of variables for Playlist Selection app
     """
     selected_songs = json.loads(selected_songs_json)
     track_id_list = [value["track_id"] for value in selected_songs]
@@ -108,7 +107,7 @@ async def create_playlist(
 async def get_request(request_id: uuid.UUID, session: DependsOnSession):
     """Request endpoint.
 
-    - **request_id**: uuid requset id
+    - **request_id**: uuid of requset
     """
     request = await session.get(models.Request, {"uid": request_id})
     if request.user is not None:
@@ -153,7 +152,7 @@ async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
 async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAuth, session: DependsOnSession):
     """Endpoint with my request.
 
-    - **request_id**: uuid requset id to get user's request
+    - **request_id**: uuid of request
     """
     request = await session.get(models.Request, {"uid": request_id})
 

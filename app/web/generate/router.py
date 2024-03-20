@@ -59,7 +59,7 @@ async def index(
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}
 @router.post(
     "/generate",
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_302_FOUND
 )
 async def generate_playlist(
     selected_songs_json: Annotated[str, Form()],

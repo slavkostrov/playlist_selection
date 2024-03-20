@@ -9,7 +9,7 @@ router = APIRouter(tags=["auth"])
 
 @router.get(
     "/login",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_307_TEMPORARY_REDIRECT
 )
 async def login(auth: DependsOnAuth):
     """Login URL, save meta info about user, redirect to spotify OAuth."""
@@ -19,7 +19,7 @@ async def login(auth: DependsOnAuth):
 
 @router.get(
     "/callback/",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_307_TEMPORARY_REDIRECT
 )
 async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
     """Callback after spotify side login. Save token to current session and redirect to main page.

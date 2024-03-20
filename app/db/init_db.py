@@ -22,7 +22,7 @@ def load_songs(settings: Settings):
     session = boto3.Session(profile_name=settings.S3_PROFILE_NAME)
     client = session.client("s3")
 
-    bucket = "hse-project-playlist-selection"
+    bucket = settings.S3_BUCKET_NAME
     dataset_key = "dataset/filtered_data_30_11_23.csv"
 
     body = client.get_object(Bucket=bucket, Key=dataset_key)["Body"]

@@ -56,7 +56,6 @@ app = FastAPI(
     description=description,
     summary="App for creating song recommendation's playlist",
     version="0.0.1",
-    debug=True,
     lifespan=model_lifespan
 )
 app.celery_app = celery_app

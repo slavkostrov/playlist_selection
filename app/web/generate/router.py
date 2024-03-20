@@ -141,6 +141,10 @@ async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAu
     """Endpoint with my request."""
     request = await session.get(models.Request, {"uid": request_id})
 
+    if request.user is None:
+        # TODO: add message
+        raise HTTPException(status_code=404)
+
     user_id = auth.get_user_id()
     if user_id != request.user.spotify_id:
         raise HTTPException(status_code=403, detail="forbiden")

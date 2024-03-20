@@ -18,6 +18,7 @@ router = APIRouter(tags=["predict"])
 @router.post(
     "/search",
     # response_model=,
+    status_code=status.HTTP_201_CREATED,
     summary="Search for track",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -45,6 +46,7 @@ async def search(
     "/generate",
     # response_model=,
     summary="Generate playlist",
+    status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "Not Found Response",

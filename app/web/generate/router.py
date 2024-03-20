@@ -8,7 +8,7 @@ from typing import Annotated
 
 import spotipy
 import sqlalchemy as sa
-from fastapi import APIRouter, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Form, HTTPException, Query, Request, status
 from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -57,7 +57,10 @@ async def index(
 
 
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}
-@router.post("/generate")
+@router.post(
+    "/generate",
+    status_code=status.HTTP_201_CREATED
+)
 async def generate_playlist(
     selected_songs_json: Annotated[str, Form()],
     parser: DependsOnParser,
@@ -82,7 +85,10 @@ async def generate_playlist(
     return RedirectResponse(url=f'/requests/{request_id}', status_code=302)
 
 
-@router.post("/create")
+@router.post(
+    "/create",
+    status_code=status.HTTP_201_CREATED
+)
 async def create_playlist(
     predicted_songs: Annotated[str, Form()],
     auth: DependsOnAuth,
@@ -103,7 +109,10 @@ async def create_playlist(
     return RedirectResponse(url=f'/?playlist_id={playlist_id}', status_code=302)
 
 
-@router.get("/requests/{request_id}")
+@router.get(
+    "/requests/{request_id}",
+    status_code=status.HTTP_200_OK
+)
 async def get_request(request_id: uuid.UUID, session: DependsOnSession):
     """Request endpoint.
 
@@ -132,7 +141,10 @@ async def get_request(request_id: uuid.UUID, session: DependsOnSession):
     return ORJSONResponse(result)
 
 
-@router.get("/my")
+@router.get(
+    "/my",
+    status_code=status.HTTP_200_OK
+)
 async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
     """Endpoint with my requests."""
     user_id = auth.get_user_id()
@@ -148,7 +160,10 @@ async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
 
     return templates.TemplateResponse("my.html", dict(request=request, requests=requests))
 
-@router.get("/my/requests/{request_id}")
+@router.get(
+    "/my/requests/{request_id}",
+    status_code=status.HTTP_200_OK
+)
 async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAuth, session: DependsOnSession):
     """Endpoint with my request.
 

@@ -41,7 +41,7 @@ async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
 
 @router.get(
     "/logout",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_307_TEMPORARY_REDIRECT
 )
 async def logout(auth: DependsOnAuth):
     """Logout URL, remove token key from cookies and token info from redis."""

@@ -15,12 +15,15 @@ Generating playlists based on selected tracks/Spotify profile/Ya.Muzik/Apple Mus
 2. Output:
 - Link to a playlist with the most similar tracks
 
+## Architecture 
+
+![Без имени](https://github.com/slavkostrov/playlist_selection/assets/64536258/bf7a63bc-9968-4047-8f35-214818eb7951)
+
 ## Example
 
 Here you can see example of out web app:
 
 ![ezgif-3-5b3fa1551f](https://github.com/slavkostrov/playlist_selection/assets/64536258/96d7be11-4e60-4779-a036-25baa1f3f23e)
-
 
 ## Plan
 

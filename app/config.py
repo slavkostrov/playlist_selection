@@ -1,5 +1,6 @@
 """Module with config for application."""
 import functools
+from typing import Literal
 
 import pydantic
 import pydantic_settings
@@ -13,11 +14,11 @@ class Settings(pydantic_settings.BaseSettings):
 
     # Postgres
     PGUSER: str
-    PGPASSWORD: pydantic.SecretStr # type: ignore[assignment]
+    PGPASSWORD: pydantic.SecretStr
     PGHOST: str
     PGPORT: int = 5432
     PGDATABASE: str
-    PGSSLMODE: str
+    PGSSLMODE: Literal["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]
     PGSSLROOTCERT: str = "/etc/ssl/certs/ca-certificates.crt"
 
     @property

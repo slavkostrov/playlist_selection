@@ -78,6 +78,9 @@ async def generate_playlist(
     - **selected_songs_json**: json of songs selected by users
     """
     selected_songs = json.loads(selected_songs_json)
+    if not selected_songs_json or not selected_songs:
+        raise HTTPException(status_code=422, detail="got empty list of songs.")
+
     track_id_list = [value["track_id"] for value in selected_songs]
     request_id = await api_generate_playlist(
         model=model,

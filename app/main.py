@@ -52,12 +52,14 @@ Useful handlers for creating playlist:
 
 """
 
+settings = get_settings()
 app = FastAPI(
     title="Playlist Selection App",
     description=description,
     summary="App for creating song recommendation's playlist",
     version="0.0.1",
-    lifespan=model_lifespan
+    lifespan=model_lifespan,
+    debug=settings.DEBUG,
 )
 app.celery_app = celery_app
 
@@ -71,7 +73,7 @@ app.mount(
 app.include_router(router=api.router)
 app.include_router(router=web.router)
 
-app.state.settings = get_settings()
+app.state.settings = settings
 app.state.async_engine = sa_asyncio.create_async_engine(app.state.settings.pg_dsn_revealed, pool_pre_ping=True)
 app.state.async_session = sa_asyncio.async_sessionmaker(bind=app.state.async_engine, expire_on_commit=False)
 

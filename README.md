@@ -114,18 +114,7 @@ PLAYLIST_SELECTION_PGSSLROOTCERT=
 PLAYLIST_SELECTION_REDIS_HOST=
 PLAYLIST_SELECTION_REDIS_PORT=
 ```
-2. Setup .env_db with
-```.env
-PGUSER=
-PGPASSWORD=
-PGHOST=
-PGPORT=5432
-PGDATABASE=
-PGSSLMODE=
-```
-3. Run docker-compose with `docker-compose up --build`
-
-Copy your AWS creds (.aws) in current directory.
+2. Run docker-compose with `docker-compose up --build`
 
 #### Tests
 

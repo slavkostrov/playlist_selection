@@ -11,7 +11,7 @@ from sqlalchemy.ext import asyncio as sa_asyncio
 
 from app import api, web
 from app.config import get_settings
-from app.model import close_model, open_model
+from app.model import open_model
 from app.worker import app as celery_app
 
 LOGGER = logging.getLogger(__name__)
@@ -19,11 +19,21 @@ LOGGER = logging.getLogger(__name__)
 @asynccontextmanager
 async def model_lifespan(app: FastAPI):
     """Open/close model logic."""
-    MODEL = open_model(app.state.settings)
-    app.state.model = MODEL
-    yield
-    await app.state.async_engine.dispose()
-    close_model()
+    settings = get_settings()
+    model = open_model(settings=settings)
+    async_engine = sa_asyncio.create_async_engine(settings.pg_dsn_revealed, pool_pre_ping=True)
+    async_session = sa_asyncio.async_sessionmaker(bind=async_engine, expire_on_commit=False)
+    user_token_cookie_key = "playlist_selection_user_id"  # Менять только вместе с base.html!
+
+    context = dict(
+        model=model,
+        async_session=async_session,
+        settings=settings,
+        user_token_cookie_key=user_token_cookie_key,
+    )
+    yield context
+
+    await async_engine.dispose()
 
 description = """
 Playlist Selection API helps you recommend awesome songs. 🎧
@@ -70,9 +80,5 @@ app.mount(
 
 app.include_router(router=api.router)
 app.include_router(router=web.router)
-
-app.state.settings = get_settings()
-app.state.async_engine = sa_asyncio.create_async_engine(app.state.settings.pg_dsn_revealed, pool_pre_ping=True)
-app.state.async_session = sa_asyncio.async_sessionmaker(bind=app.state.async_engine, expire_on_commit=False)
 
 web.setup_handlers(app=app)

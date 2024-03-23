@@ -38,7 +38,7 @@ class Settings(pydantic_settings.BaseSettings):
     # S3
     S3_BUCKET_NAME: str
     S3_PROFILE_NAME: str
-    S3_ENDPOINT_URL: str
+    S3_ENDPOINT_URL: pydantic.HttpUrl
 
     # Redis
     REDIS_HOST: str
@@ -53,7 +53,7 @@ class Settings(pydantic_settings.BaseSettings):
     CLIENT_SECRET: pydantic.SecretStr
 
     # Playlist Selection app
-    CALLBACK_URL: str
+    CALLBACK_URL: pydantic.HttpUrl
 
 @functools.lru_cache
 def get_settings() -> Settings:

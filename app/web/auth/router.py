@@ -1,8 +1,8 @@
 """Router for auth."""
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, status
 from fastapi.responses import RedirectResponse
 
-from app.dependencies import DEFAULT_USER_TOKEN_COOKIE, DependsOnAuth, DependsOnSession
+from app.dependencies import DependsOnAuth, DependsOnSession
 from app.web.auth.dao import add_user
 
 router = APIRouter(tags=["auth"])
@@ -58,9 +58,9 @@ async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
         },
     }
 )
-async def logout(auth: DependsOnAuth):
+async def logout(request: Request, auth: DependsOnAuth):
     """Logout URL, remove token key from cookies and token info from redis."""
     response = RedirectResponse("/")
     auth.remove_user()
-    response.delete_cookie(DEFAULT_USER_TOKEN_COOKIE)
+    response.delete_cookie(request.state.user_token_cookie_key)
     return response

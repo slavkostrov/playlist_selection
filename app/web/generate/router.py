@@ -14,7 +14,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.api.predict.router import api_generate_playlist as api_generate_playlist
 from app.db import models
-from app.dependencies import DependsOnAuth, DependsOnCookie, DependsOnModel, DependsOnParser, DependsOnSession
+from app.dependencies import DependsOnAuth, DependsOnCookie, DependsOnModel, DependsOnParser, DependsOnSettings, DependsOnSession
 from app.web.generate.utils import create_playlist_for_current_user, get_user_songs
 
 LOGGER = logging.getLogger(__name__)
@@ -72,6 +72,7 @@ async def generate_playlist(
     model: DependsOnModel,
     session: DependsOnSession,
     user_uid: DependsOnCookie,
+    settings: DependsOnSettings,
 ):
     """Generate playlists from user request.
 
@@ -85,6 +86,7 @@ async def generate_playlist(
         session=session,
         track_id_list=track_id_list,
         user_uid=user_uid,
+        settings=settings,
         # user_uid=user["id"], #user_uid,
     )
     return RedirectResponse(url=f'/requests/{request_id}', status_code=302)

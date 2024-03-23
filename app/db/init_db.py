@@ -8,14 +8,12 @@ import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from app.config import Settings
+from app.config import get_settings, Settings
 from app.db import models
 
 LOGGER = logging.getLogger(__name__)
 
-# TODO: refactor
-# TODO: do before start
-# TODO: move do different directory mb
+
 def load_songs(settings: Settings):
     """Load songs data from S3."""
     LOGGER.info("Start loading songs data from S3.")
@@ -64,6 +62,6 @@ def init_db(settings: Settings):
     LOGGER.info("Initial script done.")
 
 if __name__ == "__main__":
-    settings = Settings()
+    settings = get_settings()
     os.environ["PGSSLROOTCERT"] = settings.PGSSLROOTCERT
     init_db(settings=settings)

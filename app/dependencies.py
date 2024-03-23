@@ -11,13 +11,14 @@ from app.config import get_settings
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 
-DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
+
+settings = get_settings()
 
 class AuthCookieDependency:
     """Need cookie dependecy."""
 
     def __call__(self, request: Request) -> str | None:  # noqa: D102
-        user_token_cookie = request.cookies.get(DEFAULT_USER_TOKEN_COOKIE)
+        user_token_cookie = request.cookies.get(request.state.user_token_cookie_key)
         return user_token_cookie
 
 class ParserDependency:
@@ -77,14 +78,24 @@ class SpotifyAuthDependency:
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     """Create async session."""
-    async with request.app.state.async_session.begin() as session:
+    async with request.state.async_session.begin() as session:
         yield session
 
-async def get_model(request: Request) -> BaseModel:
-    """Get pretrained model."""
-    return request.app.state.model
 
-settings = get_settings()
+async def get_model_from_state(request: Request):
+    """Returns model from application state."""
+    if not hasattr(request.state, "model"):
+        raise RuntimeError("No model in app state.")
+    return request.state.model
+
+
+async def get_settings_from_state(request: Request):
+    """Returns model from application state."""
+    if not hasattr(request.state, "model"):
+        raise RuntimeError("No model in app state.")
+    return request.state.settings
+
+
 redis_db = redis.Redis(
     host=settings.REDIS_HOST,
     port=settings.REDIS_PORT,
@@ -109,5 +120,6 @@ parser_dependency = ParserDependency(
 DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]
 DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
-DependsOnModel = Annotated[BaseModel, Depends(get_model)]
+DependsOnModel = Annotated[BaseModel, Depends(get_model_from_state)]
+DependsOnSettings = Annotated[BaseModel, Depends(get_settings_from_state)]
 DependsOnSession = Annotated[AsyncSession, Depends(get_session)]

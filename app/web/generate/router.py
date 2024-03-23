@@ -8,7 +8,7 @@ from typing import Annotated
 
 import spotipy
 import sqlalchemy as sa
-from fastapi import APIRouter, Form, HTTPException, Query, Request
+from fastapi import APIRouter, Form, HTTPException, Query, Request, status
 from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -33,7 +33,10 @@ async def index(
     # already_selected_songs = selected_songs_json
     # page (offset = page * limit -> get_user_songs -> merge with already_selected_songs)
 ):
-    """Main page."""
+    """Main page.
+
+    - **playlist_id**: Spotify playlist id of created playlist
+    """
     songs = []
     current_user = None
     sp: spotipy.Spotify | None = auth.get_spotipy(raise_on_requires_login=False)
@@ -54,7 +57,15 @@ async def index(
 
 
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}
-@router.post("/generate")
+@router.post(
+    "/generate",
+    status_code=status.HTTP_302_FOUND,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Not Found Response",
+        },
+    }
+)
 async def generate_playlist(
     selected_songs_json: Annotated[str, Form()],
     parser: DependsOnParser,
@@ -62,7 +73,10 @@ async def generate_playlist(
     session: DependsOnSession,
     user_uid: DependsOnCookie,
 ):
-    """Generate playlists from user request."""
+    """Generate playlists from user request.
+
+    - **selected_songs_json**: json of songs selected by users
+    """
     selected_songs = json.loads(selected_songs_json)
     track_id_list = [value["track_id"] for value in selected_songs]
     request_id = await api_generate_playlist(
@@ -76,12 +90,23 @@ async def generate_playlist(
     return RedirectResponse(url=f'/requests/{request_id}', status_code=302)
 
 
-@router.post("/create")
+@router.post(
+    "/create",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_302_FOUND: {
+            "description": "Playlist Found",
+        },
+    }
+)
 async def create_playlist(
     predicted_songs: Annotated[str, Form()],
     auth: DependsOnAuth,
 ):
-    """Create playlist for user."""
+    """Create playlist for user.
+
+    - **predicted_songs**: predicted songs to create playlist
+    """
     sp = auth.get_spotipy()
     recommended_songs = [value["track_id"] for value in literal_eval(predicted_songs)]
     playlist_id = create_playlist_for_current_user(
@@ -94,9 +119,20 @@ async def create_playlist(
     return RedirectResponse(url=f'/?playlist_id={playlist_id}', status_code=302)
 
 
-@router.get("/requests/{request_id}")
+@router.get(
+    "/requests/{request_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_302_FOUND: {
+            "description": "Playlist Found",
+        },
+    }
+)
 async def get_request(request_id: uuid.UUID, session: DependsOnSession):
-    """Request endpoint."""
+    """Request endpoint.
+
+    - **request_id**: uuid of requset
+    """
     request = await session.get(models.Request, {"uid": request_id})
     if request.user is not None:
         LOGGER.info("Request for user - %s.", request.user)
@@ -120,7 +156,10 @@ async def get_request(request_id: uuid.UUID, session: DependsOnSession):
     return ORJSONResponse(result)
 
 
-@router.get("/my")
+@router.get(
+    "/my",
+    status_code=status.HTTP_200_OK
+)
 async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
     """Endpoint with my requests."""
     user_id = auth.get_user_id()
@@ -136,9 +175,20 @@ async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
 
     return templates.TemplateResponse("my.html", dict(request=request, requests=requests))
 
-@router.get("/my/requests/{request_id}")
+@router.get(
+    "/my/requests/{request_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Invalid User",
+        }
+    }
+)
 async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAuth, session: DependsOnSession):
-    """Endpoint with my request."""
+    """Endpoint with my request.
+
+    - **request_id**: uuid of request
+    """
     request = await session.get(models.Request, {"uid": request_id})
 
     if request.user is None:

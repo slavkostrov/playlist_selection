@@ -7,15 +7,17 @@ import pydantic_settings
 
 class Settings(pydantic_settings.BaseSettings):
     """Config class for application."""
-    model_config = pydantic_settings.SettingsConfigDict(env_file=".env_db", env_file_encoding="utf-8")
+    model_config = pydantic_settings.SettingsConfigDict(
+        env_file=".env", env_prefix="PLAYLIST_SELECTION_", env_file_encoding="utf-8"
+    )
 
     # Postgres
-    PGUSER: str = "user"
-    PGPASSWORD: pydantic.SecretStr = "pass"  # type: ignore[assignment]
-    PGHOST: str = "localhost"
+    PGUSER: str
+    PGPASSWORD: pydantic.SecretStr # type: ignore[assignment]
+    PGHOST: str
     PGPORT: int = 5432
-    PGDATABASE: str = ""
-    PGSSLMODE: str = "allow"
+    PGDATABASE: str
+    PGSSLMODE: str
     PGSSLROOTCERT: str = "/etc/ssl/certs/ca-certificates.crt"
 
     @property
@@ -33,6 +35,25 @@ class Settings(pydantic_settings.BaseSettings):
         """DSN for async connection to psql (not revealed)."""
         return f"postgresql+asyncpg://{self.PGUSER}:{self.PGPASSWORD}@{self.PGHOST}:{self.PGPORT}/{self.PGDATABASE}"
 
+    # S3
+    S3_BUCKET_NAME: str
+    S3_PROFILE_NAME: str
+    S3_ENDPOINT_URL: str
+
+    # Redis
+    REDIS_HOST: str
+    REDIS_PORT: str = 6379
+
+    # Model
+    MODEL_NAME: str
+    MODEL_CLASS: str
+
+    # Spotify credentials
+    CLIENT_ID: pydantic.SecretStr
+    CLIENT_SECRET: pydantic.SecretStr
+
+    # Playlist Selection app
+    CALLBACK_URL: str
 
 @functools.lru_cache
 def get_settings() -> Settings:

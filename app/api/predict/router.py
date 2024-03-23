@@ -18,6 +18,7 @@ router = APIRouter(tags=["predict"])
 @router.post(
     "/search",
     # response_model=,
+    status_code=status.HTTP_201_CREATED,
     summary="Search for track",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -29,7 +30,11 @@ async def search(
     song_list: list[Song],
     parser: DependsOnParser,
 ) -> ORJSONResponse:
-    """Endpoint for search tracks meta without Auth."""
+    """Endpoint for search tracks meta without Auth.
+
+    - **name**: track name in Spotify
+    - **artist**: artist name
+    """
     tracks_meta = parser.parse(song_list=song_list)
     LOGGER.info("Search %s tracks, found %s.", len(song_list), len(tracks_meta))
     # TODO: fix, duplicate
@@ -41,9 +46,13 @@ async def search(
     "/generate",
     # response_model=,
     summary="Generate playlist",
+    status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "Not Found Response",
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "`song_list` or `track_id_list` must be presented",
         },
     },
 )
@@ -55,7 +64,12 @@ async def api_generate_playlist(
     song_list: list[Song] | None = None,
     user_uid: str | None = None,
 ) -> ORJSONResponse:
-    """API endpoint for predict tracks without auth."""
+    """API endpoint for predict tracks without auth.
+
+    - **track_id_list**: list of Spotify track ids
+    - **song_list**: list of track names
+    - **settings**: Settings of variables that Playlist Selection app needs.
+    """
     if track_id_list and song_list:
         raise HTTPException(status_code=400, detail="Only one of `song_list` or `track_id_list` must be presented.")
     elif track_id_list:

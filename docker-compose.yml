@@ -13,9 +13,9 @@ services:
         poetry run python -m alembic upgrade head &&
         poetry run python db/init_db.py
     env_file:
-      - .env_db
+      - .env
     volumes:
-      - .aws/:/root/.aws:ro
+      - ~/.aws/:/root/.aws:ro
 
   app:
     build:
@@ -41,10 +41,9 @@ services:
       - PLAYLIST_SELECTION_MODEL_NAME=${PLAYLIST_SELECTION_MODEL_NAME}
     env_file:
       - .env
-      - .env_db
     restart: always
     volumes:
-      - .aws/:/root/.aws:ro
+      - ~/.aws/:/root/.aws:ro
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 5000 --log-config logging_config.yml
 
   worker:
@@ -53,7 +52,7 @@ services:
       dockerfile: docker/Dockerfile
     restart: always
     env_file:
-      - .env_db
+      - .env
     depends_on:
       - redis
     command: poetry run celery -A app.worker worker --loglevel=INFO
@@ -66,7 +65,7 @@ services:
       - "5555:5555"
     restart: always
     env_file:
-      - .env_db
+      - .env
     depends_on:
       - worker
     command: poetry run celery -A app.worker flower --host=0.0.0.0 --port=5555 --loglevel=INFO

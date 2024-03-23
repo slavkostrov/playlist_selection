@@ -19,7 +19,8 @@ LOGGER = logging.getLogger(__name__)
 @asynccontextmanager
 async def model_lifespan(app: FastAPI):
     """Open/close model logic."""
-    open_model(app.state.settings)
+    MODEL = open_model(app.state.settings)
+    app.state.model = MODEL
     yield
     await app.state.async_engine.dispose()
     close_model()

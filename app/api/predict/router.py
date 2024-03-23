@@ -51,6 +51,9 @@ async def search(
         status.HTTP_404_NOT_FOUND: {
             "description": "Not Found Response",
         },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "`song_list` or `track_id_list` must be presented",
+        },
     },
 )
 async def api_generate_playlist(

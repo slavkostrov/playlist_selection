@@ -9,7 +9,12 @@ router = APIRouter(tags=["auth"])
 
 @router.get(
     "/login",
-    status_code=status.HTTP_307_TEMPORARY_REDIRECT
+    status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Invalid Credentials",
+        },
+    }
 )
 async def login(auth: DependsOnAuth):
     """Login URL, save meta info about user, redirect to spotify OAuth."""
@@ -19,7 +24,12 @@ async def login(auth: DependsOnAuth):
 
 @router.get(
     "/callback/",
-    status_code=status.HTTP_307_TEMPORARY_REDIRECT
+    status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Invalid Credentials",
+        },
+    }
 )
 async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
     """Callback after spotify side login. Save token to current session and redirect to main page.
@@ -41,7 +51,12 @@ async def callback(code: str, auth: DependsOnAuth, session: DependsOnSession):
 
 @router.get(
     "/logout",
-    status_code=status.HTTP_307_TEMPORARY_REDIRECT
+    status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Error occured while logout. Try again",
+        },
+    }
 )
 async def logout(auth: DependsOnAuth):
     """Logout URL, remove token key from cookies and token info from redis."""

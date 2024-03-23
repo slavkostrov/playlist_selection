@@ -59,7 +59,12 @@ async def index(
 # TODO: create and use API endpoint like /api/generate/{query_song_ids}
 @router.post(
     "/generate",
-    status_code=status.HTTP_302_FOUND
+    status_code=status.HTTP_302_FOUND,
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Not Found Response",
+        },
+    }
 )
 async def generate_playlist(
     selected_songs_json: Annotated[str, Form()],
@@ -87,7 +92,12 @@ async def generate_playlist(
 
 @router.post(
     "/create",
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_302_FOUND: {
+            "description": "Playlist Found",
+        },
+    }
 )
 async def create_playlist(
     predicted_songs: Annotated[str, Form()],
@@ -111,7 +121,12 @@ async def create_playlist(
 
 @router.get(
     "/requests/{request_id}",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_302_FOUND: {
+            "description": "Playlist Found",
+        },
+    }
 )
 async def get_request(request_id: uuid.UUID, session: DependsOnSession):
     """Request endpoint.
@@ -162,7 +177,12 @@ async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
 
 @router.get(
     "/my/requests/{request_id}",
-    status_code=status.HTTP_200_OK
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_403_FORBIDDEN: {
+            "description": "Invalid User",
+        }
+    }
 )
 async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAuth, session: DependsOnSession):
     """Endpoint with my request.

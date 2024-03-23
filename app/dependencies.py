@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import SpotifyAuth
 from app.config import get_settings
-from app.model import open_model
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 
@@ -81,6 +80,10 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     async with request.app.state.async_session.begin() as session:
         yield session
 
+async def get_model(request: Request) -> BaseModel:
+    """Get pretrained model."""
+    return request.app.state.model
+
 settings = get_settings()
 redis_db = redis.Redis(
     host=settings.REDIS_HOST,
@@ -91,20 +94,20 @@ redis_db = redis.Redis(
 # TODO: validate app args (host/port/tokens), maybe without environ usage
 auth_dependency = SpotifyAuthDependency(
     redis_db=redis_db,
-    client_id=settings.CLIENT_ID,
-    client_secret=settings.CLIENT_SECRET,
+    client_id=settings.CLIENT_ID.get_secret_value(),
+    client_secret=settings.CLIENT_SECRET.get_secret_value(),
     redirect_uri=settings.CALLBACK_URL,
     # TODO: check add playlist-read-collaborative
     scope="user-library-read playlist-modify-private playlist-read-private",
 )
 
 parser_dependency = ParserDependency(
-    client_id=settings.CLIENT_ID,
-    client_secret=settings.CLIENT_SECRET,
+    client_id=settings.CLIENT_ID.get_secret_value(),
+    client_secret=settings.CLIENT_SECRET.get_secret_value(),
 )
 
 DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]
 DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
-DependsOnModel = Annotated[BaseModel, Depends(open_model)]
+DependsOnModel = Annotated[BaseModel, Depends(get_model)]
 DependsOnSession = Annotated[AsyncSession, Depends(get_session)]

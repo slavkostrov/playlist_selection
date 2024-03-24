@@ -179,6 +179,7 @@ input[type=submit]:hover {
 
 ul {
     list-style-type: none;
+    margin-top: 1rem;
   }
 
   label {
@@ -195,7 +196,7 @@ ul {
 .form ul {
     overflow: scroll;
     overflow-x: hidden;
-    height: 50%;
+    height: 15rem;
     margin-bottom: 1em;
 }
 

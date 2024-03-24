@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
 from app.db import models
-from app.dependencies import DependsOnModel, DependsOnParser, DependsOnSession
+from app.dependencies import DependsOnModel, DependsOnParser, DependsOnSession, DependsOnSettings
 from app.tasks.predict import predict as predict_task
 from playlist_selection.tracks.meta import Song, TrackMeta
 
@@ -60,6 +60,7 @@ async def api_generate_playlist(
     model: DependsOnModel,
     parser: DependsOnParser,
     session: DependsOnSession,
+    settings: DependsOnSettings,
     track_id_list: list[str] | None = None,
     song_list: list[Song] | None = None,
     user_uid: str | None = None,
@@ -94,6 +95,7 @@ async def api_generate_playlist(
         model=model,
         parser=parser,
         parser_kwargs=parser_kwargs,
+        settings=settings,
     )
 
     _: AsyncResult = predict_task.apply_async(kwargs=predict_kwargs)

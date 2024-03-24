@@ -14,7 +14,14 @@ from fastapi.templating import Jinja2Templates
 
 from app.api.predict.router import api_generate_playlist as api_generate_playlist
 from app.db import models
-from app.dependencies import DependsOnAuth, DependsOnCookie, DependsOnModel, DependsOnParser, DependsOnSession
+from app.dependencies import (
+    DependsOnAuth,
+    DependsOnCookie,
+    DependsOnModel,
+    DependsOnParser,
+    DependsOnSession,
+    DependsOnSettings,
+)
 from app.web.generate.utils import create_playlist_for_current_user, get_user_songs
 
 LOGGER = logging.getLogger(__name__)
@@ -72,6 +79,7 @@ async def generate_playlist(
     model: DependsOnModel,
     session: DependsOnSession,
     user_uid: DependsOnCookie,
+    settings: DependsOnSettings,
 ):
     """Generate playlists from user request.
 
@@ -88,6 +96,7 @@ async def generate_playlist(
         session=session,
         track_id_list=track_id_list,
         user_uid=user_uid,
+        settings=settings,
         # user_uid=user["id"], #user_uid,
     )
     return RedirectResponse(url=f'/requests/{request_id}', status_code=302)
@@ -104,6 +113,7 @@ async def generate_playlist(
 )
 async def create_playlist(
     predicted_songs: Annotated[str, Form()],
+    playlist_name: Annotated[str, Form()],
     auth: DependsOnAuth,
 ):
     """Create playlist for user.
@@ -114,8 +124,7 @@ async def create_playlist(
     recommended_songs = [value["track_id"] for value in literal_eval(predicted_songs)]
     playlist_id = create_playlist_for_current_user(
         sp=sp,
-        # TODO: update name, take it from user input?
-        name="TEST",
+        name=playlist_name,
         songs=recommended_songs,
     )
     # 302 status code for POST -> redirect -> GET
@@ -170,7 +179,8 @@ async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
 
     requests = [
         {
-            "name": request.playlist.name,
+            # TODO: задавать name плейлиста, сейчас ставится только после генерации
+            "name": request.playlist.name if request.playlist else "unnamed",
             "created_at": request.created_at,
             "uid": request.uid,
         } for request in user.requests
@@ -213,7 +223,7 @@ async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAu
         for song in request.playlist.songs:
             songs.append({
                 "name": song.name,
-                "artist_name": song.artist_name,
+                "artist_name": ", ".join(song.artist_name),
                 "track_id": song.id,
                 "href": song.link,
             })

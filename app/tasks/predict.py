@@ -8,7 +8,7 @@ from celery.concurrency.base import BasePool
 from celery.worker.request import Request
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.config import Settings, get_settings
 from app.db import models
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
@@ -103,9 +103,14 @@ def create_song_from_meta(meta: TrackMeta) -> models.Song:
 
 
 @shared_task(serializer="pickle", ignore_result=True, base=PredictTask)
-def predict(request_id: str, model: BaseModel, parser: SpotifyParser, parser_kwargs: dict[str, Any]):
+def predict(
+    request_id: str,
+    model: BaseModel,
+    parser: SpotifyParser,
+    settings: Settings,
+    parser_kwargs: dict[str, Any],
+):
     """Main predict task for playlist selection."""
-    settings = get_settings()
     engine = sa.create_engine(settings.pg_dsn_revealed_sync)
 
     tracks_meta = parser.parse(**parser_kwargs)

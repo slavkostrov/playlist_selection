@@ -11,31 +11,15 @@ from app.config import get_settings
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 
-DEFAULT_USER_TOKEN_COOKIE = "playlist_selection_user_id"
+settings = get_settings()
 
 class AuthCookieDependency:
     """Need cookie dependecy."""
 
     def __call__(self, request: Request) -> str | None:  # noqa: D102
-        user_token_cookie = request.cookies.get(DEFAULT_USER_TOKEN_COOKIE)
+        user_token_cookie = request.cookies.get(request.state.user_token_cookie_key)
         return user_token_cookie
 
-class ParserDependency:
-    """Spotify Parser dependency class."""
-
-    def __init__(self, client_id: str, client_secret: str):  # noqa: D417
-        """Contstructor of parser dependency.
-
-        Keyword Arguments:
-        client_id -- client id of spotify app.
-        client_secret -- client secret of spotify app.
-        """
-        self._client_id = client_id
-        self._client_secret = client_secret
-
-    def __call__(self) -> SpotifyParser:
-        """Return spotify parser instance."""
-        return SpotifyParser(client_id=self._client_id, client_secret=self._client_secret)
 
 class SpotifyAuthDependency:
     """Dependency from authorization in Spotify."""
@@ -77,14 +61,31 @@ class SpotifyAuthDependency:
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     """Create async session."""
-    async with request.app.state.async_session.begin() as session:
+    async with request.state.async_session.begin() as session:
         yield session
 
-async def get_model(request: Request) -> BaseModel:
-    """Get pretrained model."""
-    return request.app.state.model
 
-settings = get_settings()
+async def get_model_from_state(request: Request):
+    """Returns model from application state."""
+    if not hasattr(request.state, "model"):
+        raise RuntimeError("No model in app state.")
+    return request.state.model
+
+
+async def get_settings_from_state(request: Request):
+    """Returns settings from application state."""
+    if not hasattr(request.state, "model"):
+        raise RuntimeError("No model in app state.")
+    return request.state.settings
+
+
+async def get_parser_from_state(request: Request):
+    """Returns parser instance from application state."""
+    if not hasattr(request.state, "parser"):
+        raise RuntimeError("No parser in app state.")
+    return request.state.parser
+
+
 redis_db = redis.Redis(
     host=settings.REDIS_HOST,
     port=settings.REDIS_PORT,
@@ -101,13 +102,10 @@ auth_dependency = SpotifyAuthDependency(
     scope="user-library-read playlist-modify-private playlist-read-private",
 )
 
-parser_dependency = ParserDependency(
-    client_id=settings.CLIENT_ID.get_secret_value(),
-    client_secret=settings.CLIENT_SECRET.get_secret_value(),
-)
 
-DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]
+DependsOnParser = Annotated[SpotifyParser, Depends(get_parser_from_state)]
 DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
-DependsOnModel = Annotated[BaseModel, Depends(get_model)]
+DependsOnModel = Annotated[BaseModel, Depends(get_model_from_state)]
+DependsOnSettings = Annotated[BaseModel, Depends(get_settings_from_state)]
 DependsOnSession = Annotated[AsyncSession, Depends(get_session)]

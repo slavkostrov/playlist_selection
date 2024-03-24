@@ -1,0 +1,17 @@
+name: Deploy
+on:
+  workflow_dispatch:
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Login to Yandex Cloud Container Registry
+          id: login-cr
+          uses: yc-actions/yc-cr-login@v1
+          with:
+              yc-sa-json-credentials: '${{ secrets.YC_SA_JSON_CREDENTIALS }}'
+        - name: Checkout
+          uses: actions/checkout@v2
+        - name: Deploy COI VM
+          run: yc compute instance start playlist-selection-baseline

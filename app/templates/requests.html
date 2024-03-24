@@ -24,8 +24,9 @@
             {% endfor %}
         </ul>
         <form action="{{ url_for('create_playlist') }}" method="post">
+            <input type="Enter playlist name" name="playlist_name" {% if text_input %}value="{{ text_input }}"{% endif %} required>
             <input type="hidden" name="predicted_songs" value="{{ songs }}">
-            <input type="submit" value="Create Playlist">
+            <button type="submit" {% if button_disabled %}disabled{% endif %}>Create Playlist</button>
         </form>
     </div>
 {% endblock %}

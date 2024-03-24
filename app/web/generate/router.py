@@ -113,6 +113,7 @@ async def generate_playlist(
 )
 async def create_playlist(
     predicted_songs: Annotated[str, Form()],
+    playlist_name: Annotated[str, Form()],
     auth: DependsOnAuth,
 ):
     """Create playlist for user.
@@ -123,8 +124,7 @@ async def create_playlist(
     recommended_songs = [value["track_id"] for value in literal_eval(predicted_songs)]
     playlist_id = create_playlist_for_current_user(
         sp=sp,
-        # TODO: update name, take it from user input?
-        name="TEST",
+        name=playlist_name,
         songs=recommended_songs,
     )
     # 302 status code for POST -> redirect -> GET

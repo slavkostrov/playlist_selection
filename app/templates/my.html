@@ -2,8 +2,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-        {% for request in requests %}
-            <li><a href="{{ url_for('my_request', request_id=request.uid) }}"> {{ request.name }} </a> - {{ request.created_at }}</li>
-        {% endfor %}
-    </ul>
+    <div class="request_info">
+        <table>
+            <tr>
+                <td>Request Name</td>
+                <td>Creation Date</td>
+            </tr>
+            {% for request in requests %}
+                <tr>
+                    <td><a href="{{ url_for('my_request', request_id=request.uid) }}"> {{ request.name }}</a></td>
+                    <td>{{ request.created_at }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
 {% endblock %}

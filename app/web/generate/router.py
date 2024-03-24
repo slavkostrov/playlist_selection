@@ -169,7 +169,8 @@ async def my(request: Request, auth: DependsOnAuth, session: DependsOnSession):
 
     requests = [
         {
-            "name": request.playlist.name,
+            # TODO: задавать name плейлиста, сейчас ставится только после генерации
+            "name": request.playlist.name if request.playlist else "unnamed",
             "created_at": request.created_at,
             "uid": request.uid,
         } for request in user.requests

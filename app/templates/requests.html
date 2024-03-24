@@ -2,19 +2,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div>
-        <strong>Status:</strong> <span>{{ status }}</span>
+    <div class="request_status">
+        <div>
+            <strong>Status:</strong> <span>{{ status }}</span>
+        </div>
+
+        {% if name %}
+            <div>
+                <strong>Name:</strong> <span> {{ name }} </span>
+            </div>
+        {% endif %}
+        
+        {% if songs %}
+            <div>
+                <strong>Generated Playlist:</strong>
+            </div>
+        {% endif %}
+        <ul>
+            {% for song in songs %}
+                <li>{{ song.name }} - {{ song.artist_name }}</li>
+            {% endfor %}
+        </ul>
+        <form action="{{ url_for('create_playlist') }}" method="post">
+            <input type="hidden" name="predicted_songs" value="{{ songs }}">
+            <input type="submit" value="Create Playlist">
+        </form>
     </div>
-    <div>
-        <strong>Name:</strong> <span> {{ name }} </span>
-    </div>
-    <ul>
-        {% for song in songs %}
-            <li>{{ song.name }} - {{ song.artist_name }}</li>
-        {% endfor %}
-    </ul>
-    <form action="{{ url_for('create_playlist') }}" method="post">
-        <input type="hidden" name="predicted_songs" value="{{ songs }}">
-        <input type="submit" value="Create Playlist">
-    </form>
 {% endblock %}

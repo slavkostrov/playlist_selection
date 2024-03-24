@@ -1,48 +1,74 @@
 {% extends "base.html" %}
 
 {% block content %}
-    {% if current_user %}
-        <h2>{{ current_user.get('display_name') }}, welcome to PlaylistSelection app!</h2>
-    {% else %}
-        <h2>Welcome to PlaylistSelection app, start with login!</h2>
-    {% endif %}
-    {% if songs %}
-        <p>Generate a Spotify playlist by selecting your favorite tracks.</p>
-        <a href="{{ url_for('my') }}">My Requests</a>
-        <h2>Select Songs:</h2>
-        <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
-            <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names.." title="Type in a name">
-            <ul id="myUL">
-                {% for song in songs %}
-                    <li><label for="song_{{ loop.index }}"><input type="checkbox" name="selected_songs" id="song_{{ loop.index }}" value="{{ song.id }}">{{ song.name }} - {{ song.artist }}</label></li>
-                {% endfor %}
-            </ul>
-            <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
-            <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
-        </form>
-
-        {% if playlist_link %}
-            <div id="successNotification" class="notification">
-                <span class="close-btn" onclick="closeNotification()">&times;</span>
-                <p>Success! Your playlist created. <a href="#" id="notificationLink">Link to playlist</a></p>
-            </div>
-            <script>showNotification("{{ playlist_link }}")</script>
+    <div class="greeting">
+        {% if current_user %}
+            <h2>{{ current_user.get('display_name') }}, welcome to PlaylistSelection app!</h2>
+        {% else %}
+            <h2>Welcome to PlaylistSelection app, start with login!</h2>
         {% endif %}
-        <script>
-            function prepareSelectedSongs() {
-                const selectedSongs = [];
-                {% for song in songs %}
-                    if (document.getElementById("song_{{ loop.index }}").checked) {
-                        selectedSongs.push({
-                            track_id: "{{ song.track_id }}",
-                            name: "{{ song.name }}",
-                            artist: "{{ song.artist }}"
-                        });
-                    }
-                {% endfor %}
-                document.getElementById("selectedSongsJSON").value = JSON.stringify(selectedSongs);
-            }
-        </script>
-    {% endif %}
+    </div>
+    <div class="generate">
+        <span class="blur"></span>
+        <span class="blur"></span>
+        {% if songs %}
+            <p>Generate a Spotify playlist by selecting your favorite tracks.</p>
+            <div class="flex-parent-element">
+                <div class="flex-child-element select">
+                    <h2>Select Songs:</h2>
+                    <div class="form">
+                        <form id="playlistForm" action="{{ url_for('generate_playlist') }}" method="post">
+                            <input type="text" id="myInput" onkeyup="myFunction()" placeholder="Search for names.." title="Type in a name">
+                            <ul id="myUL">
+                                {% for song in songs %}
+                                    <li><label for="song_{{ loop.index }}"><input type="checkbox" onclick="handleCheckboxClick()" name="selected_songs" id="song_{{ loop.index }}" class="songCheckbox" value="{{ song.id }}">{{ song.name }} - {{ song.artist }}</label></li>
+                                {% endfor %}
+                            </ul>
+                            <input type="hidden" id="selectedSongsJSON" name="selected_songs_json">
+                            <input type="submit" value="Generate Playlist" onclick="prepareSelectedSongs()">
+                        </form>
+                    </div>
+                </div>
+                <div class="flex-child-element selected">
+                    <h2>Selected Songs:</h2>
+                    <ol id="myOL"></ol>
+                </div>
+            </div>
+            {% if playlist_link %}
+                <div id="successNotification" class="notification">
+                    <span class="close-btn" onclick="closeNotification()">&times;</span>
+                    <p>Success! Your playlist created. <a href="#" id="notificationLink">Link to playlist</a></p>
+                </div>
+                <script>showNotification("{{ playlist_link }}")</script>
+            {% endif %}
+            <script>
+                function prepareSelectedSongs() {
+                    const selectedSongs = [];
+                    {% for song in songs %}
+                        if (document.getElementById("song_{{ loop.index }}").checked) {
+                            selectedSongs.push({
+                                track_id: "{{ song.track_id }}",
+                                name: "{{ song.name }}",
+                                artist: "{{ song.artist }}"
+                            });
+                        }
+                    {% endfor %}
+                    document.getElementById("selectedSongsJSON").value = JSON.stringify(selectedSongs);
+                }
+                function handleCheckboxClick() {
+                    print_str = "\n";
+                    {% for song in songs %}
+                        if (document.getElementById("song_{{ loop.index }}").checked) {
+                            print_str += "<li><p style='font-size: 1rem; margin-left: 0.5rem;'>{{ song.name }} - {{ song.artist }}</p></li>";
+                        }
+                    {% endfor %}
+                    document.getElementById("myOL").innerHTML = print_str;
+                }
+            </script>
+            <div class="old_requests">
+                <a id="my_request_href" href="{{ url_for('my') }}">My Requests</a>
+            </div>
+        {% endif %}
+    </div>
     <!-- Other content for the home page -->
 {% endblock %}

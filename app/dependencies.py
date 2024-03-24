@@ -20,22 +20,6 @@ class AuthCookieDependency:
         user_token_cookie = request.cookies.get(request.state.user_token_cookie_key)
         return user_token_cookie
 
-class ParserDependency:
-    """Spotify Parser dependency class."""
-
-    def __init__(self, client_id: str, client_secret: str):  # noqa: D417
-        """Contstructor of parser dependency.
-
-        Keyword Arguments:
-        client_id -- client id of spotify app.
-        client_secret -- client secret of spotify app.
-        """
-        self._client_id = client_id
-        self._client_secret = client_secret
-
-    def __call__(self) -> SpotifyParser:
-        """Return spotify parser instance."""
-        return SpotifyParser(client_id=self._client_id, client_secret=self._client_secret)
 
 class SpotifyAuthDependency:
     """Dependency from authorization in Spotify."""
@@ -89,10 +73,17 @@ async def get_model_from_state(request: Request):
 
 
 async def get_settings_from_state(request: Request):
-    """Returns model from application state."""
+    """Returns settings from application state."""
     if not hasattr(request.state, "model"):
         raise RuntimeError("No model in app state.")
     return request.state.settings
+
+
+async def get_parser_from_state(request: Request):
+    """Returns parser instance from application state."""
+    if not hasattr(request.state, "parser"):
+        raise RuntimeError("No parser in app state.")
+    return request.state.parser
 
 
 redis_db = redis.Redis(
@@ -111,12 +102,8 @@ auth_dependency = SpotifyAuthDependency(
     scope="user-library-read playlist-modify-private playlist-read-private",
 )
 
-parser_dependency = ParserDependency(
-    client_id=settings.CLIENT_ID.get_secret_value(),
-    client_secret=settings.CLIENT_SECRET.get_secret_value(),
-)
 
-DependsOnParser = Annotated[SpotifyParser, Depends(parser_dependency)]
+DependsOnParser = Annotated[SpotifyParser, Depends(get_parser_from_state)]
 DependsOnAuth = Annotated[SpotifyAuth, Depends(auth_dependency)]
 DependsOnCookie = Annotated[str | None, Depends(AuthCookieDependency())]
 DependsOnModel = Annotated[BaseModel, Depends(get_model_from_state)]

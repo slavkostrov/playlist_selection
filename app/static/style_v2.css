@@ -295,3 +295,27 @@ table, th, td {
 .request_status form {
     margin-top: 1em;
 }
+
+.request_status button {
+    color: #fff;
+    background-color: #387c4a;
+    font-size: 12px;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.request_status button:hover {
+    background-color: #07491d;
+    color: #fff;
+}
+
+input[type="Enter playlist name"]{
+    background-color: #fff;
+    color: #18181B;
+    padding: 6px 6px;
+    border-radius: 3px;
+    border: 1px solid #387c4a;
+}

@@ -1,8 +1,6 @@
 name: Deploy
 on:
   workflow_dispatch:
-      branches:
-          - slavkostrov-patch-1
 
 jobs:
   greet:

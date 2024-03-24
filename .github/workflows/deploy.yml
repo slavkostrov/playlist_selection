@@ -19,8 +19,11 @@ jobs:
             SA_KEY: '${{ secrets.VM_YC_SA_JSON_CREDENTIALS  }}'
         - name: Checkout
           uses: actions/checkout@v2
+        - name: Stop COI VM
+          run: yc compute instance stop ${{ secrets.VM_APP_ID  }} > /dev/null && sleep 30
+          continue-on-error: true
         - name: Deploy COI VM
-          run: yc compute instance restart ${{ secrets.VM_APP_ID  }} > /dev/null
+          run: yc compute instance start ${{ secrets.VM_APP_ID  }} > /dev/null
         # TODO: redeploy
         # - name: multiple command
         #   uses: appleboy/ssh-action@v1.0.3

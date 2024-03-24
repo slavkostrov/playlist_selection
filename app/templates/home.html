@@ -41,6 +41,13 @@
                 </div>
                 <script>showNotification("{{ playlist_link }}")</script>
             {% endif %}
+            {% if error %}
+            <div id="successNotification" class="notification">
+                <span class="close-btn" onclick="closeNotification()">&times;</span>
+                <p>Error while creating playlist: {{ error_msg }}.</p>
+            </div>
+                <script>showNotification("{{ error }}")</script>
+            {% endif %}
             <script>
                 function prepareSelectedSongs() {
                     const selectedSongs = [];

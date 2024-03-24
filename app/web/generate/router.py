@@ -34,11 +34,8 @@ templates = Jinja2Templates(directory=Path(__file__).parent.parent.parent / "tem
 async def index(
     request: Request,
     auth: DependsOnAuth,
-    # TODO: fix я не знаю как это делать правильно
     playlist_id: Annotated[str | None, Query(regex="^[a-zA-Z0-9]*$")] = None,
-    # TODO:
-    # already_selected_songs = selected_songs_json
-    # page (offset = page * limit -> get_user_songs -> merge with already_selected_songs)
+    error_msg: str | None = None,
 ):
     """Main page.
 
@@ -57,6 +54,11 @@ async def index(
         "songs": songs,
         "current_user": current_user,
     }
+
+    if error_msg:
+        context["error"] = True
+        context["error_msg"] = error_msg.split(":")[-1]
+
     if playlist_id:
         context["playlist_link"] = f"https://open.spotify.com/playlist/{playlist_id}"
 

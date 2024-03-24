@@ -62,12 +62,14 @@ Useful handlers for creating playlist:
 
 """
 
+settings = get_settings()
 app = FastAPI(
     title="Playlist Selection App",
     description=description,
     summary="App for creating song recommendation's playlist",
     version="0.0.1",
-    lifespan=model_lifespan
+    lifespan=model_lifespan,
+    debug=settings.DEBUG,
 )
 app.celery_app = celery_app
 

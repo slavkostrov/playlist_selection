@@ -1,86 +1,93 @@
 version: "3.8"
 
+x-playlist-selection-common:
+  &playlist-selection-common
+  build:
+      context: .
+      dockerfile: docker/Dockerfile
+  environment:
+    &playlist-selection-common-env
+    - PLAYLIST_SELECTION_REDIS_HOST=redis
+    - PLAYLIST_SELECTION_REDIS_PORT=6379
+    - PLAYLIST_SELECTION_CLIENT_ID=${PLAYLIST_SELECTION_CLIENT_ID}
+    - PLAYLIST_SELECTION_CLIENT_SECRET=${PLAYLIST_SELECTION_CLIENT_SECRET}
+    - PLAYLIST_SELECTION_CALLBACK_URL=${PLAYLIST_SELECTION_CALLBACK_URL}
+    - PLAYLIST_SELECTION_S3_BUCKET_NAME=${PLAYLIST_SELECTION_S3_BUCKET_NAME}
+    - PLAYLIST_SELECTION_S3_PROFILE_NAME=${PLAYLIST_SELECTION_S3_PROFILE_NAME}
+    - PLAYLIST_SELECTION_MODEL_CLASS=${PLAYLIST_SELECTION_MODEL_CLASS}
+    - PLAYLIST_SELECTION_MODEL_NAME=${PLAYLIST_SELECTION_MODEL_NAME}
+    - SERVICE_URI=http://app:5000
+    - BOT_TOKEN=${BOT_TOKEN}
+  volumes:
+    &playlist-selection-common-volumes
+    - ~/.aws/:/root/.aws:ro
+  env_file:
+    &playlist-selection-common-env-file
+    - .env
+  depends_on:
+    &playlist-selection-common-depends-on
+    redis:
+      condition: service_healthy
+
 services:
 
   init_db:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    <<: *playlist-selection-common
     command:
       - bash
       - "-c"
       - >
         poetry run python -m alembic upgrade head &&
         poetry run python db/init_db.py
-    env_file:
-      - .env
-    volumes:
-      - ~/.aws/:/root/.aws:ro
 
   app:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    <<: *playlist-selection-common
     ports:
       - "5000:5000"
     depends_on:
+      <<: *playlist-selection-common-depends-on
       init_db:
         condition: service_completed_successfully
-      redis:
-        condition: service_started
       worker:
         condition: service_started
-    environment:
-      - REDIS_HOST=redis
-      - PLAYLIST_SELECTION_CLIENT_ID=${PLAYLIST_SELECTION_CLIENT_ID}
-      - PLAYLIST_SELECTION_CLIENT_SECRET=${PLAYLIST_SELECTION_CLIENT_SECRET}
-      - PLAYLIST_SELECTION_CALLBACK_URL=${PLAYLIST_SELECTION_CALLBACK_URL}
-      - PLAYLIST_SELECTION_S3_BUCKET_NAME=${PLAYLIST_SELECTION_S3_BUCKET_NAME}
-      - PLAYLIST_SELECTION_S3_PROFILE_NAME=${PLAYLIST_SELECTION_S3_PROFILE_NAME}
-      - PLAYLIST_SELECTION_MODEL_CLASS=${PLAYLIST_SELECTION_MODEL_CLASS}
-      - PLAYLIST_SELECTION_MODEL_NAME=${PLAYLIST_SELECTION_MODEL_NAME}
-    env_file:
-      - .env
     restart: always
-    volumes:
-      - ~/.aws/:/root/.aws:ro
     command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 5000 --log-config logging_config.yml
+    healthcheck:
+      test: curl --fail http://app:5000 || exit 1
+      interval: 5s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
 
   worker:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    <<: *playlist-selection-common
     restart: always
-    env_file:
-      - .env
-    depends_on:
-      - redis
     command: poetry run celery -A app.worker worker --loglevel=INFO
 
   flower:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    ports:
-      - "5555:5555"
+    <<: *playlist-selection-common
     restart: always
-    env_file:
-      - .env
     depends_on:
-      - worker
+      <<: *playlist-selection-common-depends-on
+      worker:
+        condition: service_started
     command: poetry run celery -A app.worker flower --host=0.0.0.0 --port=5555 --loglevel=INFO
 
   bot:
+    <<: *playlist-selection-common
     build: ./bot
     restart: always
-    environment:
-      - SERVICE_URI=http://app:5000
-      - BOT_TOKEN=${BOT_TOKEN}
     depends_on:
-      - app
+      <<: *playlist-selection-common-depends-on
+      app:
+        condition: service_healthy
 
   redis:
     image: "redis:latest"
     restart: always
-    ports:
-      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+      start_period: 10s

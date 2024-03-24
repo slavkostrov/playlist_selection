@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>PlaylistSelection</title>
     <!-- Link to your CSS file -->
-    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='style_v2.css') }}">
     <script src="{{ url_for('static', path='functions.js') }}"></script>
 </head>
 <body>
@@ -16,7 +16,7 @@
             {% if request.cookies.get('playlist_selection_user_id') %}
                 <a href="{{ url_for('logout') }}">Logout</a>
             {% else %}
-                <a href="{{ url_for('login') }}">Login with Spotify</a>
+            <a href="{{ url_for('login') }}">Login with Spotify</a>
             {% endif %}
         </div>
     </header>

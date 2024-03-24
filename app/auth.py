@@ -3,9 +3,10 @@ import logging
 
 import redis
 import spotipy
-from exceptions import RequiresLoginException, UnknownCookieException
 from spotipy.cache_handler import RedisCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
+
+from app.exceptions import RequiresLoginException, UnknownCookieException
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,10 +49,15 @@ class SpotifyAuth:
             cache_handler=cache_handler,
         )
 
-    def cache_access_token(self, code: str) -> str:
+    @property
+    def token_key(self):
+        """Return token key."""
+        return self._token_key
+
+    def cache_access_token(self, code: str, uid: str | None = None) -> str:
         """Cache access token."""
         if not self.is_known_user:
-            raise UnknownCookieException
+            raise UnknownCookieException(uid)
         LOGGER.info("Creating access token for user with uuid %s.", self._token_key)
         return self._sp_oauth.get_access_token(code, as_dict=False)
 
@@ -66,6 +72,12 @@ class SpotifyAuth:
         LOGGER.info("Remove user with uuid %s from DB.", self._token_key)
         self._redis_db.delete(self._token_key)
         return True
+
+    def get_user_id(self) -> str:
+        """Get spotify id for user."""
+        sp = self.get_spotipy()
+        user = sp.current_user()
+        return user["id"]
 
     def get_spotipy(self, raise_on_requires_login: bool = True) -> spotipy.Spotify | None:
         """Return spotipy object."""

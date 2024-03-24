@@ -1,0 +1,32 @@
+<!-- requests.html -->
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="request_status">
+        <div>
+            <strong>Status:</strong> <span>{{ status }}</span>
+        </div>
+
+        {% if name %}
+            <div>
+                <strong>Name:</strong> <span> {{ name }} </span>
+            </div>
+        {% endif %}
+
+        {% if songs %}
+            <div>
+                <strong>Generated Playlist:</strong>
+            </div>
+        {% endif %}
+        <ul>
+            {% for song in songs %}
+                <li>{{ song.name }} - {{ song.artist_name }}</li>
+            {% endfor %}
+        </ul>
+        <form action="{{ url_for('create_playlist') }}" method="post">
+            <input type="Enter playlist name" name="playlist_name" {% if text_input %}value="{{ text_input }}"{% endif %} required>
+            <input type="hidden" name="predicted_songs" value="{{ songs }}">
+            <button type="submit" {% if button_disabled %}disabled{% endif %}>Create Playlist</button>
+        </form>
+    </div>
+{% endblock %}

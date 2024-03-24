@@ -17,6 +17,6 @@ EXPOSE 5000
 ENV REDIS_HOST=redis
 ENV REDIS_PORT=6379
 
-# for fast rebuild
+COPY alembic.ini /app/alembic.ini
+COPY migrations /app/migrations
 COPY /app /app
-CMD ["poetry", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000", "--log-config", "logging_config.yml"]

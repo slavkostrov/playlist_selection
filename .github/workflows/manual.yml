@@ -18,15 +18,15 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v2
         - name: Deploy COI VM
-          run: yc compute instance start epdr1jt20hvabffcjkee > /dev/null
+          run: yc compute instance start ${{ secrets.VM_APP_ID  }} > /dev/null
           continue-on-error: true
-        - name: multiple command
-          uses: appleboy/ssh-action@v1.0.3
-          with:
-            host: ${{ secrets.HOST }}
-            username: ${{ secrets.USERNAME }}
-            password: ${{ secrets.PASSWORD }}
-            port: 22
-            script: |
-              whoami
-              ls -al
+        # - name: multiple command
+        #   uses: appleboy/ssh-action@v1.0.3
+        #   with:
+        #     host: ${{ secrets.HOST }}
+        #     username: ${{ secrets.USERNAME }}
+        #     password: ${{ secrets.PASSWORD }}
+        #     port: 22
+        #     script: |
+        #       whoami
+        #       ls -al

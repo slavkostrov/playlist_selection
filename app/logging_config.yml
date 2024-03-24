@@ -42,6 +42,11 @@ loggers:
       - default
     level: INFO
     propagate: no
+  init_db:
+    handlers:
+      - default
+    level: INFO
+    propagate: no
 root:
   level: DEBUG
   handlers:

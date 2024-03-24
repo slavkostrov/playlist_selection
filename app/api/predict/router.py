@@ -1,11 +1,14 @@
 """Endpoints description for api."""
 import logging
 
+import sqlalchemy as sa
+from celery.result import AsyncResult
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
-from app.dependencies import DependsOnModel, DependsOnParser
-from playlist_selection.tracks.dataset import get_meta_features
+from app.db import models
+from app.dependencies import DependsOnModel, DependsOnParser, DependsOnSession, DependsOnSettings
+from app.tasks.predict import predict as predict_task
 from playlist_selection.tracks.meta import Song, TrackMeta
 
 LOGGER = logging.getLogger(__name__)
@@ -15,6 +18,7 @@ router = APIRouter(tags=["predict"])
 @router.post(
     "/search",
     # response_model=,
+    status_code=status.HTTP_201_CREATED,
     summary="Search for track",
     responses={
         status.HTTP_404_NOT_FOUND: {
@@ -26,7 +30,11 @@ async def search(
     song_list: list[Song],
     parser: DependsOnParser,
 ) -> ORJSONResponse:
-    """Endpoint for search tracks meta without Auth."""
+    """Endpoint for search tracks meta without Auth.
+
+    - **name**: track name in Spotify
+    - **artist**: artist name
+    """
     tracks_meta = parser.parse(song_list=song_list)
     LOGGER.info("Search %s tracks, found %s.", len(song_list), len(tracks_meta))
     # TODO: fix, duplicate
@@ -38,19 +46,31 @@ async def search(
     "/generate",
     # response_model=,
     summary="Generate playlist",
+    status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_404_NOT_FOUND: {
             "description": "Not Found Response",
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "`song_list` or `track_id_list` must be presented",
         },
     },
 )
 async def api_generate_playlist(
     model: DependsOnModel,
     parser: DependsOnParser,
+    session: DependsOnSession,
+    settings: DependsOnSettings,
     track_id_list: list[str] | None = None,
     song_list: list[Song] | None = None,
+    user_uid: str | None = None,
 ) -> ORJSONResponse:
-    """API endpoint for predict tracks without auth."""
+    """API endpoint for predict tracks without auth.
+
+    - **track_id_list**: list of Spotify track ids
+    - **song_list**: list of track names
+    - **settings**: Settings of variables that Playlist Selection app needs.
+    """
     if track_id_list and song_list:
         raise HTTPException(status_code=400, detail="Only one of `song_list` or `track_id_list` must be presented.")
     elif track_id_list:
@@ -61,13 +81,28 @@ async def api_generate_playlist(
         parser_kwargs = dict(song_list=song_list)
     else:
         raise HTTPException(status_code=400, detail="`song_list` or `track_id_list` must be presented.")
-    tracks_meta = parser.parse(**parser_kwargs)
-    if not tracks_meta:
-        raise HTTPException(status_code=400, detail="no data found for input songs.")
-    features = get_meta_features(tracks_meta)
-    predictions =  model.predict(features)
-    # TODO: в целом можно попробовать брать с S3
-    # но тогда кажется надо начать по другому хранить ключи
-    meta_predicted = parser.parse(track_id_list=predictions)
-    meta_predicted = list(map(TrackMeta.to_dict, meta_predicted))
-    return ORJSONResponse(meta_predicted)
+
+    values = {"status": models.Status.RECEIVED, "user_uid": user_uid}
+    request_id = (
+        await (
+            session
+            .execute(sa.insert(models.Request).values(**values).returning(models.Request.uid)))
+    ).scalar()
+    await session.commit()
+
+    predict_kwargs = dict(
+        request_id=request_id,
+        model=model,
+        parser=parser,
+        parser_kwargs=parser_kwargs,
+        settings=settings,
+    )
+
+    _: AsyncResult = predict_task.apply_async(kwargs=predict_kwargs)
+
+    # TODO: redirect на request/request_id
+    # если уже готово, то супер
+    # если нет, то говорим подождать или посмотреть потом в личном кабинете
+    # а в боте мб сделать ретраи
+
+    return request_id

@@ -1,0 +1,297 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap');
+
+/* Your CSS styles for Spotify-like design */
+
+*{
+    padding: 0;
+    margin: 0;
+    outline: none;
+    border: none;
+    box-sizing: "border-box";
+}
+
+a{
+    text-decoration: none;
+}
+
+p {
+    font-size: 0.5rem;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #18181B;
+    padding-bottom: 50px;
+}
+
+/* Style your header/navbar */
+.navbar {
+    background-color: #18181B;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1rem;
+    gap: 2rem;
+    margin: auto;
+    max-width: 1200px;
+}
+
+.logo h1 {
+    align-items: center;
+    text-align: center;
+    font-size: 2rem;
+}
+
+.login-section {
+    align-content: end;
+}
+
+.login-section a {
+    color: #fff;
+    background-color: #387c4a;
+    font-size: 1rem;
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.login-section a:hover {
+    background-color: #07491d;
+    color: #fff;
+}
+
+.greeting {
+    color: #fff;
+    max-width: 1200px;
+    margin: auto;
+    padding: 2rem 1rem;
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.generate {
+    color: #fff;
+    max-width: 1200px;
+    margin: auto;
+    text-align: left;
+}
+
+.generate p {
+    font-size: 1.5rem;
+}
+
+.flex-parent-element {
+    display: flex;
+    max-width: 1200px;
+    margin: auto;
+    text-align: left;
+}
+  
+.flex-child-element {
+    flex: 1;
+    margin: 10px;
+}
+
+.flex-child-element:first-child {
+    margin-right: 350px;
+    float: right;
+}
+
+.old_requests {
+    color: #fff;
+    max-width: 1200px;
+    margin: auto;
+    text-align: left;
+    font-size: 16px;
+    margin-top: 1rem;
+}
+
+#my_request_href {
+    color: #fff;
+}
+
+#my_request_href:hover {
+    color: #387c4a;
+}
+
+.blur {
+    position: absolute;
+    box-shadow: 50px 130px 1000px 70px #387c4a;
+    z-index: -100;
+}
+
+.search {
+    padding: 1rem 1rem;
+    padding-top: 1.5em;
+    justify-content: space-between;
+}
+
+.songs {
+    padding: 0.5rem 1rem;
+}
+
+input[type=text]{
+    background-color: #fff;
+    color: #18181B;
+    padding: 10px 10px;
+    border-radius: 3px;
+    border: 1px solid #387c4a;
+}
+
+input[type=submit] {
+    color: #fff;
+    background-color: #387c4a;
+    font-size: 12px;
+    text-decoration: none;
+    padding: 10px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+input[type=submit]:hover {
+    background-color: #07491d;
+    color: #fff;
+}
+
+.notification {
+    display: none;
+    background-color: #4CAF50;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+}
+
+.close-btn {
+    color: white;
+    float: right;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+ul {
+    list-style-type: none;
+  }
+
+  label {
+    border:0px solid #ccc;
+    padding:10px;
+    margin:0 15 10px;
+    display:block;
+  }
+
+  label:hover {
+    cursor:pointer;
+  }
+
+.form ul {
+    overflow: scroll;
+    overflow-x: hidden;
+    height: 50%;
+    margin-bottom: 1em;
+}
+
+body::-webkit-scrollbar {
+    width: 15px;
+  }
+
+body::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 5px grey; 
+    border-radius: 5px;
+}
+
+body::-webkit-scrollbar-thumb {
+    background: #387c4a;
+    border-radius: 5px;
+}
+
+ul::-webkit-scrollbar {
+    width: 15px;
+  }
+
+ul::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 5px grey; 
+    border-radius: 5px;
+}
+
+ul::-webkit-scrollbar-thumb {
+    background: #387c4a;
+    border-radius: 5px;
+}
+
+ol {
+    list-style-type: none;
+  }
+
+  label {
+    border:0px solid #ccc;
+    padding:10px;
+    margin:0 15 10px;
+    display:block;
+  }
+
+  label:hover {
+    cursor:pointer;
+  }
+
+.generated_playlist {
+    color: #fff;
+    max-width: 1200px;
+    margin: auto;
+    text-align: left;
+}
+
+.request_info {
+    color: #fff;
+    max-width: 1200px;
+    margin: auto;
+    text-align: left;
+}
+
+.request_info a {
+    color: #fff;
+}
+
+.request_info a:hover {
+    color: #387c4a;
+}
+
+table, th, td {
+    border: 2px solid #387c4a;
+    color: #fff;
+    border-collapse: collapse;
+    width: 50%;
+    height: 50px;
+}
+
+.request_status {
+    color: #fff;
+    max-width: 1200px;
+    margin: auto;
+    text-align: left;
+}
+
+.request_status ul {
+    list-style-type: none;
+    margin-left: 1rem;
+    font-size: 0.9rem;
+  }
+
+  label {
+    border:0px solid #ccc;
+    padding:10px;
+    margin:0 15 10px;
+    display:block;
+  }
+
+.request_status form {
+    margin-top: 1em;
+}

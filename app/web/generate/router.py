@@ -14,7 +14,14 @@ from fastapi.templating import Jinja2Templates
 
 from app.api.predict.router import api_generate_playlist as api_generate_playlist
 from app.db import models
-from app.dependencies import DependsOnAuth, DependsOnCookie, DependsOnModel, DependsOnParser, DependsOnSettings, DependsOnSession
+from app.dependencies import (
+    DependsOnAuth,
+    DependsOnCookie,
+    DependsOnModel,
+    DependsOnParser,
+    DependsOnSession,
+    DependsOnSettings,
+)
 from app.web.generate.utils import create_playlist_for_current_user, get_user_songs
 
 LOGGER = logging.getLogger(__name__)

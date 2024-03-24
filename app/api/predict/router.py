@@ -3,11 +3,11 @@ import logging
 
 import sqlalchemy as sa
 from celery.result import AsyncResult
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
 from app.db import models
-from app.dependencies import DependsOnModel, DependsOnParser, DependsOnSettings, DependsOnSession
+from app.dependencies import DependsOnModel, DependsOnParser, DependsOnSession, DependsOnSettings
 from app.tasks.predict import predict as predict_task
 from playlist_selection.tracks.meta import Song, TrackMeta
 

@@ -8,7 +8,7 @@ import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
-from app.config import get_settings, Settings
+from app.config import Settings, get_settings
 from app.db import models
 
 LOGGER = logging.getLogger(__name__)

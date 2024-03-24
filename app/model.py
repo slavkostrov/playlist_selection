@@ -3,7 +3,6 @@ import logging
 
 from app.config import Settings
 from playlist_selection.models import get_model_class
-from playlist_selection.models.model import BaseModel
 
 LOGGER = logging.getLogger(__name__)
 

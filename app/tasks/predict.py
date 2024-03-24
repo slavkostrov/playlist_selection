@@ -8,7 +8,7 @@ from celery.concurrency.base import BasePool
 from celery.worker.request import Request
 from sqlalchemy.orm import Session
 
-from app.config import get_settings, Settings
+from app.config import Settings, get_settings
 from app.db import models
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser

@@ -11,7 +11,6 @@ from app.config import get_settings
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 
-
 settings = get_settings()
 
 class AuthCookieDependency:

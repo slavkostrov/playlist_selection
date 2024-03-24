@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  greet:
+  deploy:
     runs-on: ubuntu-latest
     steps:
         - name: Login to Yandex Cloud Container Registry
@@ -11,6 +11,10 @@ jobs:
           uses: yc-actions/yc-cr-login@v1
           with:
               yc-sa-json-credentials: '${{ secrets.YC_SA_JSON_CREDENTIALS }}'
+        - name: Install yc cli and login into yandex cloud
+          uses: okar1/yc-cli-install@master
+          with:
+            SA_KEY: '${{ secrets.YC_SA_JSON_CREDENTIALS }}'
         - name: Checkout
           uses: actions/checkout@v2
         - name: Deploy COI VM

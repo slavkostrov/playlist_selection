@@ -18,4 +18,4 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v2
         - name: Deploy COI VM
-          run: yc compute instance start playlist-selection-baseline
+          run: yc compute instance start epdr1jt20hvabffcjkee

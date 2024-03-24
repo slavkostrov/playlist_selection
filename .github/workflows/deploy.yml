@@ -1,7 +1,7 @@
-name: Stop
+name: Deploy
 on:
   workflow_dispatch:
-      branches: 
+      branches:
         - 'master'
 
 jobs:
@@ -20,4 +20,15 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v2
         - name: Deploy COI VM
-          run: yc compute instance stop ${{ secrets.VM_APP_ID  }} > /dev/null
+          run: yc compute instance restart ${{ secrets.VM_APP_ID  }} > /dev/null
+        # TODO: redeploy
+        # - name: multiple command
+        #   uses: appleboy/ssh-action@v1.0.3
+        #   with:
+        #     host: ${{ secrets.HOST }}
+        #     username: ${{ secrets.USERNAME }}
+        #     password: ${{ secrets.PASSWORD }}
+        #     port: 22
+        #     script: |
+        #       whoami
+        #       ls -al

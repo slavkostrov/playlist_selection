@@ -223,7 +223,7 @@ async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAu
         for song in request.playlist.songs:
             songs.append({
                 "name": song.name,
-                "artist_name": song.artist_name,
+                "artist_name": ", ".join(song.artist_name),
                 "track_id": song.id,
                 "href": song.link,
             })

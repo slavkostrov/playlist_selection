@@ -18,7 +18,7 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v2
         - name: Deploy COI VM
-          run: yc compute instance start epdr1jt20hvabffcjkee
+          run: yc compute instance start epdr1jt20hvabffcjkee > /dev/null
           continue-on-error: true
         - name: multiple command
           uses: appleboy/ssh-action@v1.0.3

@@ -19,6 +19,7 @@ jobs:
           uses: actions/checkout@v2
         - name: Deploy COI VM
           run: yc compute instance start epdr1jt20hvabffcjkee
+          continue-on-error: true
         - name: multiple command
           uses: appleboy/ssh-action@v1.0.3
           with:

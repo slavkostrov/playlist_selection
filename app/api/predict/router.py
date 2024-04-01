@@ -99,10 +99,4 @@ async def api_generate_playlist(
     )
 
     _: AsyncResult = predict_task.apply_async(kwargs=predict_kwargs)
-
-    # TODO: redirect на request/request_id
-    # если уже готово, то супер
-    # если нет, то говорим подождать или посмотреть потом в личном кабинете
-    # а в боте мб сделать ретраи
-
     return request_id

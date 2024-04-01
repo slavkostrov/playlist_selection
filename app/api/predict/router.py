@@ -68,7 +68,6 @@ async def api_generate_playlist(
 
     - **track_id_list**: list of Spotify track ids
     - **song_list**: list of track names
-    - **settings**: Settings of variables that Playlist Selection app needs.
     """
     if track_id_list and song_list:
         raise HTTPException(status_code=400, detail="Only one of `song_list` or `track_id_list` must be presented.")

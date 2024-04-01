@@ -37,7 +37,6 @@ async def search(
     """
     tracks_meta = parser.parse(song_list=song_list)
     LOGGER.info("Search %s tracks, found %s.", len(song_list), len(tracks_meta))
-    # TODO: fix, duplicate
     tracks_meta = list(map(TrackMeta.to_dict, tracks_meta))
     return ORJSONResponse(tracks_meta)
 

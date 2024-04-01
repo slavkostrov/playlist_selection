@@ -64,7 +64,6 @@ class PredictRequest(DatabaseRequest):
         # self.update_status(models.Status.PROCESSING)
         return super().on_accepted(pid, time_accepted)
 
-    # TODO: add on timeout?
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
         """On failure callback."""
         super().on_failure(

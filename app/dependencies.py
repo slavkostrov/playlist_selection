@@ -92,7 +92,6 @@ redis_db = redis.Redis(
     db=0,
 )
 
-# TODO: validate app args (host/port/tokens), maybe without environ usage
 auth_dependency = SpotifyAuthDependency(
     redis_db=redis_db,
     client_id=settings.CLIENT_ID.get_secret_value(),

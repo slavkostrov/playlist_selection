@@ -102,6 +102,3 @@ class Request(Base):
     def __repr__(self) -> str:
         """Representation for request."""
         return f"Request(uid='{self.uid}', user_uid='{self.user_uid}', created_at='{self.created_at}')"
-
-# TODO: un update ставить плейлист готов
-# TODO: обновлять статус по таймауту

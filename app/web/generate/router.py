@@ -65,7 +65,6 @@ async def index(
     return templates.TemplateResponse("home.html", context)
 
 
-# TODO: create and use API endpoint like /api/generate/{query_song_ids}
 @router.post(
     "/generate",
     status_code=status.HTTP_302_FOUND,
@@ -207,8 +206,7 @@ async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAu
     request = await session.get(models.Request, {"uid": request_id})
 
     if request.user is None:
-        # TODO: add message
-        raise HTTPException(status_code=404)
+        raise HTTPException(status_code=404, detail="unknown request")
 
     user_id = auth.get_user_id()
     if user_id != request.user.spotify_id:
@@ -232,7 +230,3 @@ async def my_request(request_: Request, request_id: uuid.UUID, auth: DependsOnAu
         data["songs"] = songs
 
     return templates.TemplateResponse("requests.html", data)
-
-# TODO: think about security, tokens storage etc
-# TODO: read spotify-dev doc about possible restrictions
-# TODO: think about processing multiple users at the same time

@@ -81,7 +81,6 @@ class SpotifyAuth:
 
     def get_spotipy(self, raise_on_requires_login: bool = True) -> spotipy.Spotify | None:
         """Return spotipy object."""
-        # TODO: check is_known_user?
         token_info = self._sp_oauth.validate_token(self._sp_oauth.cache_handler.get_cached_token())
         if not token_info:
             if raise_on_requires_login:

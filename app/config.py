@@ -55,6 +55,7 @@ class Settings(pydantic_settings.BaseSettings):
 
     # Playlist Selection app
     CALLBACK_URL: pydantic.HttpUrl
+    SCOPE: str = "user-library-read playlist-modify-private playlist-read-private"
 
     DEBUG: bool = True
 

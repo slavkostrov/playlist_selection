@@ -97,8 +97,7 @@ auth_dependency = SpotifyAuthDependency(
     client_id=settings.CLIENT_ID.get_secret_value(),
     client_secret=settings.CLIENT_SECRET.get_secret_value(),
     redirect_uri=settings.CALLBACK_URL,
-    # TODO: check add playlist-read-collaborative
-    scope="user-library-read playlist-modify-private playlist-read-private",
+    scope=settings.SCOPE,
 )
 
 

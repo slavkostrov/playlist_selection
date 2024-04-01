@@ -98,7 +98,6 @@ async def generate_playlist(
         track_id_list=track_id_list,
         user_uid=user_uid,
         settings=settings,
-        # user_uid=user["id"], #user_uid,
     )
     return RedirectResponse(url=f'/requests/{request_id}', status_code=302)
 

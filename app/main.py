@@ -24,7 +24,7 @@ async def model_lifespan(app: FastAPI):
     model = open_model(settings=settings)
     async_engine = sa_asyncio.create_async_engine(settings.pg_dsn_revealed, pool_pre_ping=True)
     async_session = sa_asyncio.async_sessionmaker(bind=async_engine, expire_on_commit=False)
-    user_token_cookie_key = "playlist_selection_user_id"  # Менять только вместе с base.html!
+    user_token_cookie_key = "playlist_selection_user_id"
     parser = SpotifyParser(
         client_id=settings.CLIENT_ID.get_secret_value(),
         client_secret=settings.CLIENT_SECRET.get_secret_value(),

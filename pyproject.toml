@@ -83,3 +83,10 @@ force-exclude = true
 
 [tool.ruff.pydocstyle]
 convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = [
+  "/"
+]

@@ -7,7 +7,6 @@ import sqlalchemy.orm
 from sqlalchemy import event
 from sqlalchemy.ext import asyncio as sa_asyncio
 
-import app.main
 from app import config, dependencies
 from app.db import models
 from tests.unit.utils import db
@@ -67,6 +66,6 @@ def app(create_database: None, transactional_session: sa_asyncio.AsyncSession) -
     async def get_session() -> AsyncIterator[sa_asyncio.AsyncSession]:
         yield transactional_session
 
-    app = app.main.app # TODO: fix
+    from app.main import app
     app.dependency_overrides[dependencies.get_session] = get_session
     yield app

@@ -5,6 +5,7 @@ x-playlist-selection-common:
   build:
       context: .
       dockerfile: docker/Dockerfile
+      target: base
   environment:
     &playlist-selection-common-env
     - PLAYLIST_SELECTION_REDIS_HOST=redis
@@ -92,3 +93,31 @@ services:
       timeout: 30s
       retries: 50
       start_period: 10s
+
+  pytest:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: test
+    volumes:
+      - ./tests:/test_root/tests
+    depends_on:
+      - test-db
+    environment:
+      PGDATABASE: playlist_selection
+      PGUSER: user
+      PGPASSWORD: pass
+      PGHOST: test-db
+      # --without-integration
+      # --benchmark-autosave
+      PYTEST_ADDOPTS: --durations 10 --cov app --cov-report term --cov-report xml --cov-fail-under=95  --junitxml xunit-reports/xunit-result-unit.xml
+    entrypoint:
+      ["poetry", "run", "pytest"]
+
+  test-db:
+    image: postgres
+    tmpfs: /var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      PGDATA: /var/lib/postgresql/data

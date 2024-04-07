@@ -7,19 +7,22 @@ import sqlalchemy.orm
 from sqlalchemy import event
 from sqlalchemy.ext import asyncio as sa_asyncio
 
-from app import config, dependencies
-from app.db import models
-from tests.unit.utils import db
+from unit.utils import db
 
 
 @pytest.fixture
 async def create_empty_database() -> AsyncIterator[None]:
+    from app import config
+
     async for _ in db.create_database(config.get_settings().pg_dsn_revealed):
         yield
 
 
 @pytest.fixture
 async def create_database(create_empty_database: None, async_engine: sa_asyncio.AsyncEngine) -> AsyncIterator[None]:
+    from app.db import models
+
+
     async with async_engine.begin() as connection:
         await connection.run_sync(models.Base.metadata.create_all)
     await async_engine.dispose()
@@ -63,6 +66,8 @@ async def transactional_session(async_engine: sa_asyncio.AsyncEngine) -> AsyncIt
 
 @pytest.fixture
 def app(create_database: None, transactional_session: sa_asyncio.AsyncSession) -> Iterable[fastapi.FastAPI]:
+    from app import dependencies
+
     async def get_session() -> AsyncIterator[sa_asyncio.AsyncSession]:
         yield transactional_session
 

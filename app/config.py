@@ -9,7 +9,7 @@ import pydantic_settings
 class Settings(pydantic_settings.BaseSettings):
     """Config class for application."""
     model_config = pydantic_settings.SettingsConfigDict(
-        env_file=".env", env_prefix="PLAYLIST_SELECTION_", env_file_encoding="utf-8"
+        env_prefix="PLAYLIST_SELECTION_", env_file_encoding="utf-8" # env_file=".env",
     )
 
     # Postgres

@@ -74,7 +74,7 @@ def app(create_database: None, transactional_session: sa_asyncio.AsyncSession) -
     from app.main import app
 
     # TODO: override spotify dependencies
-    app.dependency_overrides[dependencies.SpotifyAuthDependency] = AsyncMock()
+    app.dependency_overrides[dependencies.auth_dependency] = AsyncMock()
     app.dependency_overrides[dependencies.get_session] = get_session
 
     yield app

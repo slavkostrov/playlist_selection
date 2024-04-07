@@ -1,4 +1,4 @@
 
 
-def test_simple(app):
+def test_simple(app, client):
     assert 1 == 1

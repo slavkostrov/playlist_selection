@@ -199,7 +199,7 @@ class KnnModel(BaseModel):
         cls,
         bucket_name: str,
         model_name: str,
-        profile_name: str | None = "default"
+        profile_name: str | None = None,
     ) -> BaseEstimator:
         """Open KNN model from S3.
 

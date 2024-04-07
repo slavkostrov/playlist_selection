@@ -12,7 +12,6 @@ def open_model(settings: Settings):
     model = model_class.open(
         bucket_name=settings.S3_BUCKET_NAME,
         model_name=settings.MODEL_NAME,
-        profile_name=settings.S3_PROFILE_NAME,
     )
     LOGGER.info("Model %s loaded, version: %s", model_class, settings.MODEL_NAME)
     return model

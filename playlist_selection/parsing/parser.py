@@ -62,7 +62,7 @@ class SpotifyParser(BaseParser):
         elif sp:
             self.sp = sp
         else:
-            # TODO: add fix
+            # TODO TESTS: add fix
             self.sp = None
             # raise ValueError
 

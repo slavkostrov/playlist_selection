@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext import asyncio as sa_asyncio
 
-# TODO: fix
+# TODO TESTS: fix
 POSTGRES_DEFAULT_DB = "postgres"
 
 

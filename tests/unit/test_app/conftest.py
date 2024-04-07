@@ -73,7 +73,7 @@ def app(create_database: None, transactional_session: sa_asyncio.AsyncSession) -
 
     from app.main import app
 
-    # TODO: override spotify dependencies
+    # TODO TESTS: override spotify dependencies
     mock = MagicMock()
     mock.get_spotipy.return_value = MagicMock()
     app.dependency_overrides[dependencies.auth_dependency] = lambda: mock

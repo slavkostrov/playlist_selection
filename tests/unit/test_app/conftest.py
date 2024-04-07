@@ -72,5 +72,8 @@ def app(create_database: None, transactional_session: sa_asyncio.AsyncSession) -
         yield transactional_session
 
     from app.main import app
+
+    # TODO: override spotify dependencies
     app.dependency_overrides[dependencies.get_session] = get_session
+
     yield app

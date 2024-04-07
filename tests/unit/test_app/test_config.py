@@ -1,4 +1,5 @@
 
 
-def test_simple(app, client):
-    assert 1 == 1
+async def test_simple(app, client):
+    response = await client.get("/")
+    assert 1 == 0

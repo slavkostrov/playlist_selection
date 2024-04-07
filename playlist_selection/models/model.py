@@ -49,6 +49,23 @@ class BaseModel(ABC):
         return NotImplementedError()
 
 
+# TODO: fix
+class DummyModel(BaseModel):
+    """DummyModel."""
+
+    def get_preprocessor(self, **preprocess_params) -> DataFrame:
+        """Dummy preprocessor."""
+        pass
+
+    def open(self) -> BaseEstimator:
+        """Dummy open."""
+        return self
+
+    def predict(self, dataset) -> list:
+        """Dummy predict."""
+        return dataset["track_id"].tolist()
+
+
 class KnnModel(BaseModel):
     """KNN model class."""
 

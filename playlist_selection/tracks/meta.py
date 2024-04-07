@@ -84,6 +84,7 @@ class TrackMeta(BaseModel):
     track_details: TrackDetails = Field(default_factory=TrackDetails, repr=False)
 
     @validator("album_release_date", pre=True)
+    @classmethod
     def _validate_date(cls, value):
         if re.match(r'\d{4}-\d{2}-\d{2}', value):
             return value

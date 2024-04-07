@@ -97,11 +97,8 @@ services:
       dockerfile: docker/Dockerfile
       target: dev
     volumes:
-      # - ./:/playlist-selection-app
       - ./tests:/playlist-selection-app/tests
-      - ./migrations:/playlist-selection-app/migrations
       - ./pyproject.toml:/playlist-selection-app/pyproject.toml
-      - ./alembic.ini:/playlist-selection-app/alembic.ini
     depends_on:
       - test-s3
       - test-db
@@ -132,7 +129,7 @@ services:
       AWS_ENDPOINT_URL: "http://test-s3:9000"
       PYTEST_ADDOPTS: --durations 10 --cov app --cov-report term --cov-report xml --cov-fail-under=80  --junitxml xunit-reports/xunit-result-unit.xml
     entrypoint:
-      ["pytest"]
+      ["bash"]
 
   test-s3:
     image: minio/minio

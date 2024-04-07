@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup build
-        run: docker-compose build
+        run: touch .env && docker-compose build
       - name: Run tests
         run: docker-compose run pytest -vv
   build:

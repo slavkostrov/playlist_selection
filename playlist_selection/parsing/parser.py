@@ -64,7 +64,7 @@ class SpotifyParser(BaseParser):
         else:
             # TODO: add fix
             self.sp = None
-            raise ValueError
+            # raise ValueError
 
         self._aws_access_key_id = aws_access_key_id
         self._aws_secret_access_key = aws_secret_access_key

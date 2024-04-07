@@ -27,6 +27,43 @@ x-playlist-selection-common:
     redis:
       condition: service_healthy
 
+
+x-playlist-selection-tests:
+  &playlist-selection-tests
+  build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+  environment:
+    &playlist-selection-tests-env
+    PLAYLIST_SELECTION_PGDATABASE: playlist_selection
+    PLAYLIST_SELECTION_PGUSER: user
+    PLAYLIST_SELECTION_PGPASSWORD: pass
+    PLAYLIST_SELECTION_PGHOST: test-db
+    PLAYLIST_SELECTION_PGSSLMODE: disable
+    PLAYLIST_SELECTION_PGPORT: 5432
+    PLAYLIST_SELECTION_REDIS_HOST: test-redis
+    PLAYLIST_SELECTION_REDIS_PORT: 6379
+    # TODO TESTS: setup minio
+    # PLAYLIST_SELECTION_CLIENT_ID: ""
+    # PLAYLIST_SELECTION_CLIENT_SECRET: ""
+    # PLAYLIST_SELECTION_CALLBACK_URL: "https://localhost:5000"
+    PLAYLIST_SELECTION_CLIENT_ID: ${PLAYLIST_SELECTION_CLIENT_ID}
+    PLAYLIST_SELECTION_CLIENT_SECRET: ${PLAYLIST_SELECTION_CLIENT_SECRET}
+    PLAYLIST_SELECTION_CALLBACK_URL: "https://localhost:5000"
+    PLAYLIST_SELECTION_S3_ENDPOINT_URL: "http://test-s3:9000"
+    PLAYLIST_SELECTION_S3_BUCKET_NAME: "playlist-selection"
+    PLAYLIST_SELECTION_S3_PROFILE_NAME: ""
+    PLAYLIST_SELECTION_MODEL_CLASS: "KnnModel"
+    PLAYLIST_SELECTION_MODEL_NAME: ""
+    AWS_ACCESS_KEY_ID: "user"
+    AWS_SECRET_ACCESS_KEY: "pass12345678"
+    AWS_ENDPOINT_URL: "http://test-s3:9000"
+  depends_on:
+    &playlist-selection-tests-depends-on
+    test-redis:
+      condition: service_healthy
+
 services:
 
   init_db:
@@ -103,30 +140,9 @@ services:
       - test-s3
       - test-db
       - test-redis
+      - test-celery
     environment:
-      PLAYLIST_SELECTION_PGDATABASE: playlist_selection
-      PLAYLIST_SELECTION_PGUSER: user
-      PLAYLIST_SELECTION_PGPASSWORD: pass
-      PLAYLIST_SELECTION_PGHOST: test-db
-      PLAYLIST_SELECTION_PGSSLMODE: disable
-      PLAYLIST_SELECTION_PGPORT: 5432
-      PLAYLIST_SELECTION_REDIS_HOST: test-redis
-      PLAYLIST_SELECTION_REDIS_PORT: 6379
-      # TODO TESTS: setup minio
-      # PLAYLIST_SELECTION_CLIENT_ID: ""
-      # PLAYLIST_SELECTION_CLIENT_SECRET: ""
-      # PLAYLIST_SELECTION_CALLBACK_URL: "https://localhost:5000"
-      PLAYLIST_SELECTION_CLIENT_ID: ${PLAYLIST_SELECTION_CLIENT_ID}
-      PLAYLIST_SELECTION_CLIENT_SECRET: ${PLAYLIST_SELECTION_CLIENT_SECRET}
-      PLAYLIST_SELECTION_CALLBACK_URL: "https://localhost:5000"
-      PLAYLIST_SELECTION_S3_ENDPOINT_URL: "http://test-s3:9000"
-      PLAYLIST_SELECTION_S3_BUCKET_NAME: "playlist-selection"
-      PLAYLIST_SELECTION_S3_PROFILE_NAME: ""
-      PLAYLIST_SELECTION_MODEL_CLASS: "KnnModel"
-      PLAYLIST_SELECTION_MODEL_NAME: ""
-      AWS_ACCESS_KEY_ID: "user"
-      AWS_SECRET_ACCESS_KEY: "pass12345678"
-      AWS_ENDPOINT_URL: "http://test-s3:9000"
+      <<: *playlist-selection-tests-env
       PYTEST_ADDOPTS: --durations 10 --cov app --cov-report term --cov-report xml --cov-fail-under=80  --junitxml xunit-reports/xunit-result-unit.xml
     entrypoint:
       ["pytest"]
@@ -157,3 +173,12 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       PGDATA: /var/lib/postgresql/data
+
+  test-celery:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+    environment:
+      <<: *playlist-selection-tests-env
+    command: celery -A app.worker worker --loglevel=INFO

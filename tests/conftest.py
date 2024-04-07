@@ -43,11 +43,11 @@ def setup_test_env():
     os.environ["PLAYLIST_SELECTION_MODEL_NAME"] = ""
 
     os.environ["PLAYLIST_SELECTION_PGUSER"] = "user"
-    os.environ["PLAYLIST_SELECTION_PGPASSWORD"] = "past"
+    os.environ["PLAYLIST_SELECTION_PGPASSWORD"] = "pass"
     os.environ["PLAYLIST_SELECTION_PGHOST"] = "test-db"
-    os.environ["PLAYLIST_SELECTION_PGPORT"] = "5932"
+    os.environ["PLAYLIST_SELECTION_PGPORT"] = "5432"
     os.environ["PLAYLIST_SELECTION_PGDATABASE"] = "playlist_selection"
-    os.environ["PLAYLIST_SELECTION_PGSSLMODE"] = "allow"
+    os.environ["PLAYLIST_SELECTION_PGSSLMODE"] = "disable"
     # os.environ["PLAYLIST_SELECTION_PGSSLROOTCERT"] = ""
 
     os.environ["PLAYLIST_SELECTION_REDIS_HOST"] = "redis"

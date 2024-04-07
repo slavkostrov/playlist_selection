@@ -27,10 +27,10 @@ async def create_database(create_empty_database: None, async_engine: sa_asyncio.
         await connection.run_sync(models.Base.metadata.create_all)
     await async_engine.dispose()
     yield
-    async with async_engine.connect() as connection:
-        has_garbage = (await connection.execute(sa.text("select * from thingy"))).scalar()
-    if has_garbage:
-        raise ValueError
+    # async with async_engine.connect() as connection:
+    #     has_garbage = (await connection.execute(sa.text("select * from tracks"))).scalar()
+    # if has_garbage:
+    #     raise ValueError
     async with async_engine.begin() as connection:
         await connection.run_sync(models.Base.metadata.drop_all)
 

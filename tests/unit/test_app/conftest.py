@@ -8,7 +8,7 @@ from sqlalchemy import event
 from sqlalchemy.ext import asyncio as sa_asyncio
 
 from unit.utils import db
-
+from unittest.mock import AsyncMock
 
 @pytest.fixture
 async def create_empty_database() -> AsyncIterator[None]:
@@ -74,6 +74,7 @@ def app(create_database: None, transactional_session: sa_asyncio.AsyncSession) -
     from app.main import app
 
     # TODO: override spotify dependencies
+    app.dependency_overrides[dependencies.SpotifyAuthDependency] = AsyncMock()
     app.dependency_overrides[dependencies.get_session] = get_session
 
     yield app

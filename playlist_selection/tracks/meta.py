@@ -2,7 +2,7 @@
 import json
 import re
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 S3_SAVE_PREFIX = "tracks" # Директория на s3 куда сохраняем мету
 
@@ -83,8 +83,7 @@ class TrackMeta(BaseModel):
     genres: list[str] = Field(default_factory=lambda : ["unknown"], repr=True)
     track_details: TrackDetails = Field(default_factory=TrackDetails, repr=False)
 
-    @validator("album_release_date", pre=True)
-    @classmethod
+    @field_validator
     def _validate_date(cls, value):
         if re.match(r'\d{4}-\d{2}-\d{2}', value):
             return value

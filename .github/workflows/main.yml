@@ -31,28 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-      - name: Setup env
-        run: |
-          poetry config virtualenvs.create true --local
-          poetry config virtualenvs.in-project true --local
-      - uses: actions/cache@v4
-        name: Cache env
-        with:
-          path: ./.venv
-          key: venv-${{ hashFiles('poetry.lock') }}
-      - name: Install the project dependencies
-        run: poetry install --without dev
+      - name: Setup build
+        run: docker-compose build
       - name: Run tests
-        run: poetry run pytest -v tests/
-      - name: Test coverage
-        continue-on-error: true
-        run: poetry run pytest --cov=src --cov-fail-under=60 tests/
+        run: docker-compose run pytest -vv
   build:
     runs-on: ubuntu-latest
     steps:

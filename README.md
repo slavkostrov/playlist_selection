@@ -126,15 +126,16 @@ AWS_ENDPOINT_URL=
 
 #### Tests
 
-Without coverage report:
+Run tests with:
 
 ```bash
-poetry run pytest -vv tests
+docker-compose run pytest
 ```
 
-Coverage report:
+You can specify any pytest's flags, for example:
+
 ```bash
-poetry run pytest --cov=src --cov-fail-under=60 tests/
+docker-compose run pytest --pdb
 ```
 
 ## Authors

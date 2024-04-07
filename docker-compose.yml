@@ -129,7 +129,7 @@ services:
       AWS_ENDPOINT_URL: "http://test-s3:9000"
       PYTEST_ADDOPTS: --durations 10 --cov app --cov-report term --cov-report xml --cov-fail-under=80  --junitxml xunit-reports/xunit-result-unit.xml
     entrypoint:
-      ["bash"]
+      ["pytest"]
 
   test-s3:
     image: minio/minio

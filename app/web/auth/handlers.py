@@ -19,7 +19,7 @@ async def unknown_cookie_handler(request: Request, exc: UnknownCookieException) 
         user_uuid = exc.args[0]
     else:
         user_uuid = uuid.uuid4()
-    redirect_response.set_cookie(key=request.state.user_token_cookie_key, value=user_uuid)
+    redirect_response.set_cookie(key=request.state.settings.USER_TOKEN_COOKIE_KEY, value=user_uuid)
     return redirect_response
 
 async def spotify_api_error_handler(request: Request, exc: SpotifyException) -> Response:

@@ -62,5 +62,5 @@ async def logout(request: Request, auth: DependsOnAuth):
     """Logout URL, remove token key from cookies and token info from redis."""
     response = RedirectResponse("/")
     auth.remove_user()
-    response.delete_cookie(request.state.user_token_cookie_key)
+    response.delete_cookie(request.state.settings.USER_TOKEN_COOKIE_KEY)
     return response

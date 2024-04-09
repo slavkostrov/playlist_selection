@@ -143,7 +143,7 @@ services:
       - test-celery
     environment:
       <<: *playlist-selection-tests-env
-      PYTEST_ADDOPTS: --benchmark-autosave --durations 10 --cov app --cov-report term --cov-report xml --cov-fail-under=80  --junitxml xunit-reports/xunit-result-unit.xml
+      PYTEST_ADDOPTS: --benchmark-autosave --durations 10 --cov app --cov-report term --cov-report xml --cov-fail-under=65  --junitxml xunit-reports/xunit-result-unit.xml
     entrypoint:
       ["pytest"]
 

@@ -9,7 +9,7 @@ import pydantic_settings
 class Settings(pydantic_settings.BaseSettings):
     """Config class for application."""
     model_config = pydantic_settings.SettingsConfigDict(
-        env_file=".env", env_prefix="PLAYLIST_SELECTION_", env_file_encoding="utf-8"
+        env_prefix="PLAYLIST_SELECTION_", env_file_encoding="utf-8" # env_file=".env",
     )
 
     # Postgres
@@ -55,6 +55,7 @@ class Settings(pydantic_settings.BaseSettings):
 
     # Playlist Selection app
     CALLBACK_URL: pydantic.HttpUrl
+    USER_TOKEN_COOKIE_KEY: str = "playlist_selection_user_id"
     SCOPE: str = "user-library-read playlist-modify-private playlist-read-private"
 
     DEBUG: bool = True

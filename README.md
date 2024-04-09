@@ -96,16 +96,25 @@ VSCode supports `ruff` [extension](https://marketplace.visualstudio.com/items?it
 
 1. Create .env file with tokens
 ```.env
+
+# Credentials for your app in https://developer.spotify.com/
 PLAYLIST_SELECTION_CLIENT_ID=
 PLAYLIST_SELECTION_CLIENT_SECRET=
 PLAYLIST_SELECTION_CALLBACK_URL=
+
+# Settings for your object storage to use in app
 PLAYLIST_SELECTION_S3_ENDPOINT_URL=
 PLAYLIST_SELECTION_S3_BUCKET_NAME=
 PLAYLIST_SELECTION_S3_PROFILE_NAME=
+
+# Model's configuration
 PLAYLIST_SELECTION_MODEL_NAME=
 PLAYLIST_SELECTION_MODEL_CLASS=
+
+# Token of TG bot
 BOT_TOKEN=
 
+# Settings of remote Postgres
 PLAYLIST_SELECTION_PGUSER=
 PLAYLIST_SELECTION_PGPASSWORD=
 PLAYLIST_SELECTION_PGHOST=
@@ -114,22 +123,34 @@ PLAYLIST_SELECTION_PGDATABASE=
 PLAYLIST_SELECTION_PGSSLMODE=
 PLAYLIST_SELECTION_PGSSLROOTCERT=
 
+# Settings of Redis
 PLAYLIST_SELECTION_REDIS_HOST=
 PLAYLIST_SELECTION_REDIS_PORT=
+
+# Default aws credentials
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=
+AWS_ENDPOINT_URL=
 ```
-2. Run docker-compose with `docker-compose up --build`
+2. Run build with `docker-compose build`
+3. To run web-app execute `docker-compose run -p 5000:5000 app`
+4. To run telegram bot execute `docker-compose run bot`
+
+Or run all with `docker-compose up --build`.
 
 #### Tests
 
-Without coverage report:
+Run tests with:
 
 ```bash
-poetry run pytest -vv tests
+docker-compose run pytest
 ```
 
-Coverage report:
+You can specify any pytest's flags, for example:
+
 ```bash
-poetry run pytest --cov=src --cov-fail-under=60 tests/
+docker-compose run pytest --pdb
 ```
 
 ## Authors

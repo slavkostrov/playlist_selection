@@ -163,3 +163,4 @@ cython_debug/
 #.idea/
 /models
 .env_db
+xunit-reports/

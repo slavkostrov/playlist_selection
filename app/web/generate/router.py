@@ -34,7 +34,7 @@ templates = Jinja2Templates(directory=Path(__file__).parent.parent.parent / "tem
 async def index(
     request: Request,
     auth: DependsOnAuth,
-    playlist_id: Annotated[str | None, Query(regex="^[a-zA-Z0-9]*$")] = None,
+    playlist_id: Annotated[str | None, Query(pattern="^[a-zA-Z0-9]*$")] = None,
     error_msg: str | None = None,
 ):
     """Main page.

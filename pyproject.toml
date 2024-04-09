@@ -45,6 +45,8 @@ psycopg2-binary = "^2.9.9"
 pytest = "^7.4.2"
 pytest-cov = "^4.1.0"
 httpx = "^0.26.0"
+pytest-asyncio = "^0.23.6"
+asgi-lifespan = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.1.1"
@@ -65,6 +67,14 @@ mlflow = "^2.10.2"
 fire = "^0.5.0"
 rich = "^13.7.0"
 
+
+[tool.poetry.group.tests.dependencies]
+pytest-benchmark = "^4.0.0"
+pytest-icdiff = "^0.9"
+pytest-integration = "^0.2.3"
+pytest-timeout = "^2.3.1"
+pytest-sugar = "^1.0.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
@@ -83,3 +93,7 @@ force-exclude = true
 
 [tool.ruff.pydocstyle]
 convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

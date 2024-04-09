@@ -1,4 +1,4 @@
-# playlist_selection
+![изображение](https://github.com/slavkostrov/playlist_selection/assets/64536258/55593885-1786-4c7a-871c-a36feffd683e)# playlist_selection
 
 Our project available on [web page](http://51.250.97.70:5000/) and also in TG bot [@playlist_selection_bot](https://t.me/playlist_selection_bot) ([bot's description](https://github.com/Hul1Ganych/ps-tg-bot/tree/master)).
 
@@ -122,7 +122,9 @@ AWS_SECRET_ACCESS_KEY=
 AWS_DEFAULT_REGION=
 AWS_ENDPOINT_URL=
 ```
-2. Run docker-compose with `docker-compose up --build`
+2. Run build with `docker-compose build`
+3. To run web-app execute `docker-compose run app`
+4. To run telegram bot execute `docker-compose build`
 
 #### Tests
 

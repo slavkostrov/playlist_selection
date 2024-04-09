@@ -124,7 +124,7 @@ AWS_ENDPOINT_URL=
 ```
 2. Run build with `docker-compose build`
 3. To run web-app execute `docker-compose run app`
-4. To run telegram bot execute `docker-compose build`
+4. To run telegram bot execute `docker-compose run bot`
 
 #### Tests
 

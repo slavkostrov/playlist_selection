@@ -123,8 +123,10 @@ AWS_DEFAULT_REGION=
 AWS_ENDPOINT_URL=
 ```
 2. Run build with `docker-compose build`
-3. To run web-app execute `docker-compose run app`
+3. To run web-app execute `docker-compose run -p 5000:5000 app`
 4. To run telegram bot execute `docker-compose run bot`
+
+Or run all with `docker-compose up --build`.
 
 #### Tests
 

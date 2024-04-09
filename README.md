@@ -1,4 +1,4 @@
-![изображение](https://github.com/slavkostrov/playlist_selection/assets/64536258/55593885-1786-4c7a-871c-a36feffd683e)# playlist_selection
+# playlist_selection
 
 Our project available on [web page](http://51.250.97.70:5000/) and also in TG bot [@playlist_selection_bot](https://t.me/playlist_selection_bot) ([bot's description](https://github.com/Hul1Ganych/ps-tg-bot/tree/master)).
 

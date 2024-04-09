@@ -17,7 +17,7 @@ class AuthCookieDependency:
     """Need cookie dependecy."""
 
     def __call__(self, request: Request) -> str | None:  # noqa: D102
-        user_token_cookie = request.cookies.get(request.settings.USER_TOKEN_COOKIE_KEY)
+        user_token_cookie = request.cookies.get(request.state.settings.USER_TOKEN_COOKIE_KEY)
         return user_token_cookie
 
 

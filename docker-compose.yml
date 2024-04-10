@@ -149,12 +149,20 @@ services:
 
   test-s3:
     image: minio/minio
+    volumes:
+      - ./tests/test_data:/data/playlist-selection/test-data
     environment:
       - MINIO_ROOT_USER=user
       - MINIO_ROOT_PASSWORD=pass12345678
     entrypoint: sh
     # TODO TESTS: add custom model & data sample to bucket
-    command: -c 'mkdir -p /data/playlist-selection && minio server --console-address :9001 /data'
+    command:
+      - "-c"
+      - >
+        mkdir -p /minio/playlist-selection
+        && cp data/playlist-selection/test-data/dataset_sample.csv minio/playlist-selection/dataset_sample.csv
+        && cp data/playlist-selection/test-data/test_model.pkl minio/playlist-selection/test_model.pkl
+        && minio server /minio
 
   test-redis:
     image: "redis:latest"

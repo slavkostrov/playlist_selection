@@ -88,10 +88,12 @@ class TempAudioDumper(BaseAudioDumper):
     """Base dumper for audio."""
 
     def __init__(self) -> None:
+        """Temp audio dumper constructor."""
         super().__init__()
         self.folder = tempfile.mkdtemp()
-    
+
     def __del__(self):
+        """Remove temp dir."""
         shutil.rmtree(self.folder)
 
     def dump_audio(self, song: Song, file_path: str):

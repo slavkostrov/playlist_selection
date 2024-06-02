@@ -1,27 +1,26 @@
 """Predict task for Celery."""
 import logging
-from typing import Any, List
+from typing import Any
 
 import sqlalchemy as sa
+import torch
+import torchaudio
 from celery import Task, shared_task
 from celery.concurrency.base import BasePool
 from celery.worker.request import Request
-from sqlalchemy.orm import Session
-import torch
-import torchaudio
-from pydub import AudioSegment
 from encodec import EncodecModel
+from encodec.utils import convert_audio
+from pydub import AudioSegment
+from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.db import models
+from playlist_selection.downloading import YouTubeDownloader
+from playlist_selection.downloading.downloader import TempAudioDumper
 from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 from playlist_selection.tracks.dataset import get_meta_features
 from playlist_selection.tracks.meta import TrackMeta
-from playlist_selection.downloading import YouTubeDownloader
-from playlist_selection.downloading.downloader import TempAudioDumper
-from pydub import AudioSegment
-from encodec.utils import convert_audio
 
 LOGGER = logging.getLogger(__name__)
 
@@ -109,7 +108,8 @@ def create_song_from_meta(meta: TrackMeta) -> models.Song:
     )
 
 
-def get_embeddings(tracks_meta: List[TrackMeta]):
+def get_embeddings(tracks_meta: list[TrackMeta]):
+    """Return embeddings for tracks."""
     dumper = TempAudioDumper()
     downloader = YouTubeDownloader(audio_dumper=dumper)
     
@@ -123,7 +123,7 @@ def get_embeddings(tracks_meta: List[TrackMeta]):
 
         try:
             track = AudioSegment.from_file(f"{dumper.folder}/audio.mp3", format="mp3")
-        except:
+        except Exception:
             track = AudioSegment.from_file(f"{dumper.folder}/audio.mp3", format="mp4")
 
         start_time = len(track) / 2 - 15000
@@ -155,7 +155,7 @@ def predict(
     engine = sa.create_engine(settings.pg_dsn_revealed_sync)
 
     tracks_meta = parser.parse(**parser_kwargs)
-    embeddings = get_embeddings(tracks_meta)
+    _ = get_embeddings(tracks_meta)
     features = get_meta_features(tracks_meta)
     predictions =  model.predict(features)
 

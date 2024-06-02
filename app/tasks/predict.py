@@ -1,12 +1,16 @@
 """Predict task for Celery."""
 import logging
-from typing import Any
+from typing import Any, List
 
 import sqlalchemy as sa
 from celery import Task, shared_task
 from celery.concurrency.base import BasePool
 from celery.worker.request import Request
 from sqlalchemy.orm import Session
+import torch
+import torchaudio
+from pydub import AudioSegment
+from encodec import EncodecModel
 
 from app.config import Settings, get_settings
 from app.db import models
@@ -14,6 +18,10 @@ from playlist_selection.models.model import BaseModel
 from playlist_selection.parsing.parser import SpotifyParser
 from playlist_selection.tracks.dataset import get_meta_features
 from playlist_selection.tracks.meta import TrackMeta
+from playlist_selection.downloading import YouTubeDownloader
+from playlist_selection.downloading.downloader import TempAudioDumper
+from pydub import AudioSegment
+from encodec.utils import convert_audio
 
 LOGGER = logging.getLogger(__name__)
 
@@ -101,6 +109,40 @@ def create_song_from_meta(meta: TrackMeta) -> models.Song:
     )
 
 
+def get_embeddings(tracks_meta: List[TrackMeta]):
+    dumper = TempAudioDumper()
+    downloader = YouTubeDownloader(audio_dumper=dumper)
+    
+    model = EncodecModel.encodec_model_24khz()
+    model.set_target_bandwidth(6.0)
+
+    embeddings = []
+    for track_meta in tracks_meta:
+        song = track_meta.artist_name, track_meta.track_name
+        downloader.download_and_save_audio(song)
+
+        try:
+            track = AudioSegment.from_file(f"{dumper.folder}/audio.mp3", format="mp3")
+        except:
+            track = AudioSegment.from_file(f"{dumper.folder}/audio.mp3", format="mp4")
+
+        start_time = len(track) / 2 - 15000
+        end_time = len(track) / 2 + 15000
+        track = track[start_time:end_time]
+        track.export(f"{dumper.folder}/audio.wav", format="wav")
+
+        wav, sr = torchaudio.load(f"{dumper.folder}/audio.wav")
+        wav = convert_audio(wav, sr, model.sample_rate, model.channels)
+        wav = wav.unsqueeze(0)
+
+        with torch.no_grad():
+            encoded_frames = model.encode(wav)
+        codes = torch.cat([encoded[0] for encoded in encoded_frames], dim=-1)
+        embedding = model.quantizer.decode(codes.transpose(0, 1)).squeeze()
+        embeddings.append(embedding.numpy())
+    return embeddings
+
+
 @shared_task(serializer="pickle", ignore_result=True, base=PredictTask)
 def predict(
     request_id: str,
@@ -113,6 +155,7 @@ def predict(
     engine = sa.create_engine(settings.pg_dsn_revealed_sync)
 
     tracks_meta = parser.parse(**parser_kwargs)
+    embeddings = get_embeddings(tracks_meta)
     features = get_meta_features(tracks_meta)
     predictions =  model.predict(features)
 

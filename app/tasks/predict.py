@@ -135,8 +135,9 @@ def get_embeddings(tracks_meta: list[TrackMeta]):
         wav = convert_audio(wav, sr, model.sample_rate, model.channels)
         wav = wav.unsqueeze(0)
 
-        with torch.no_grad():
+        with torch.inference_mode():
             encoded_frames = model.encode(wav)
+
         codes = torch.cat([encoded[0] for encoded in encoded_frames], dim=-1)
         embedding = model.quantizer.decode(codes.transpose(0, 1)).squeeze()
         embeddings.append(embedding.numpy())

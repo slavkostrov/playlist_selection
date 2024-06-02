@@ -157,6 +157,8 @@ def predict(
     tracks_meta = parser.parse(**parser_kwargs)
     _ = get_embeddings(tracks_meta)
     features = get_meta_features(tracks_meta)
+    # TODO: concat features and embeddings
+    # and pass it to model input
     predictions =  model.predict(features)
 
     with Session(engine) as session:

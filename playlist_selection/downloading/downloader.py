@@ -84,6 +84,28 @@ class S3AudioDumper(BaseAudioDumper):
         )
 
 
+class TempAudioDumper(BaseAudioDumper):
+    """Base dumper for audio."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.folder = tempfile.mkdtemp()
+    
+    def __del__(self):
+        shutil.rmtree(self.folder)
+
+    def dump_audio(self, song: Song, file_path: str):
+        """Save song from file_path."""
+        save_path = f"{self.folder}/{self.get_relative_path(song)}"
+        shutil.move(file_path, save_path)
+
+    @staticmethod
+    def get_relative_path(song: Song) -> str:
+        """Return relative path to file for save."""
+        path = "audio.mp3"
+        return path
+
+
 @contextlib.contextmanager
 def make_temp_directory():
     """Context manager for creating temp directories."""

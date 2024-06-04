@@ -1,5 +1,6 @@
 """Predict task for Celery."""
 import logging
+from datetime import timedelta
 from typing import Any
 
 import sqlalchemy as sa
@@ -23,7 +24,7 @@ from playlist_selection.tracks.dataset import get_meta_features
 from playlist_selection.tracks.meta import TrackMeta
 
 LOGGER = logging.getLogger(__name__)
-
+DEFAULT_MAX_SONG_DURATION_MIN = 15
 
 class DatabaseRequest(Request):
     """Request with DB usage."""
@@ -156,6 +157,15 @@ def predict(
     engine = sa.create_engine(settings.pg_dsn_revealed_sync)
 
     tracks_meta = parser.parse(**parser_kwargs)
+    tracks_meta = list(
+        filter(
+            lambda track_meta: timedelta(milliseconds=track_meta.track_details.duration_ms) > timedelta(minutes=DEFAULT_MAX_SONG_DURATION_MIN), 
+            tracks_meta,
+        )
+    )
+    if not tracks_meta:
+        raise RuntimeError("got empty tracks_meta list after filtering too long.")
+
     _ = get_embeddings(tracks_meta)
     features = get_meta_features(tracks_meta)
     # TODO: concat features and embeddings

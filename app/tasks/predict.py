@@ -159,7 +159,10 @@ def predict(
     tracks_meta = parser.parse(**parser_kwargs)
     tracks_meta = list(
         filter(
-            lambda track_meta: timedelta(milliseconds=track_meta.track_details.duration_ms) > timedelta(minutes=DEFAULT_MAX_SONG_DURATION_MIN), 
+            lambda track_meta: (
+                timedelta(milliseconds=track_meta.track_details.duration_ms) 
+                > timedelta(minutes=DEFAULT_MAX_SONG_DURATION_MIN)
+            ), 
             tracks_meta,
         )
     )

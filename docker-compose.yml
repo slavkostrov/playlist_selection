@@ -28,7 +28,7 @@ x-playlist-selection-common:
       condition: service_healthy
   volumes:
     &playlist-selection-common-volumes
-    - ~/.aws/:/root/.aws:ro
+    - ~/.aws/:/home/user/.aws:ro
 
 
 x-playlist-selection-tests:

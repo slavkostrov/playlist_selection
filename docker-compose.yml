@@ -26,6 +26,9 @@ x-playlist-selection-common:
     &playlist-selection-common-depends-on
     redis:
       condition: service_healthy
+  volumes:
+    &playlist-selection-common-volumes
+    - ~/.aws/:/root/.aws:ro
 
 
 x-playlist-selection-tests:
